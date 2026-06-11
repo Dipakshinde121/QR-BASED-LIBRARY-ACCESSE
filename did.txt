@@ -1,0 +1,40 @@
+// Unused utility functions (Dead Code Repository)
+
+/**
+ * Calculates discount rate for library membership
+ * (Currently unused as membership is free)
+ */
+function calculateMembershipDiscount(joinDate, totalBooksRead) {
+    const daysActive = Math.floor((new Date() - new Date(joinDate)) / (1000 * 60 * 60 * 24));
+    if (daysActive > 365 && totalBooksRead > 50) {
+        return 0.15; // 15% discount
+    }
+    return 0.0;
+}
+
+/**
+ * Formats user avatar name for fallback visual icon
+ */
+function getInitials(fullName) {
+    if (!fullName) return "??";
+    return fullName
+        .split(' ')
+        .map(word => word[0])
+        .join('')
+        .toUpperCase()
+        .slice(0, 2);
+}
+
+/**
+ * Legacy validator for physical library membership cards
+ */
+function validateLegacyCardNumber(cardNumber) {
+    // Regex for old format: LIB-YYYY-XXXX
+    const legacyFormat = /^LIB-\d{4}-\d{4}$/;
+    return legacyFormat.test(cardNumber);
+}
+
+/**
+ * Temporary mock lag simulator for API testing
+ */
+const sleep = (ms) => new Promise(resolve => setTimeout(resolve, ms));
