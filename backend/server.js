@@ -10,6 +10,10 @@ const PORT = process.env.PORT || 5000;
 // Middleware to parse JSON bodies
 app.use(express.json());
 
+// Mount API routes
+const booksRouter = require('./routes/books');
+app.use('/api/books', booksRouter);
+
 // Basic health check endpoint
 app.get('/api/health', (req, res) => {
     res.json({
