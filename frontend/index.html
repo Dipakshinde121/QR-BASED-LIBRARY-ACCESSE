@@ -52,6 +52,16 @@
                 </button>
             </section>
 
+            <!-- Book Info Display (Dynamic) -->
+            <div id="book-info" class="book-info-card" style="display: none;">
+                <h3 id="book-title">Book Title</h3>
+                <p id="book-author">by Author</p>
+                <div class="info-badge">
+                    <i class="fa-solid fa-location-dot"></i>
+                    <span id="book-location">Location</span>
+                </div>
+            </div>
+
             <!-- QR Code Placeholder Visualizer -->
             <section class="qr-section">
                 <div class="qr-card-container">
@@ -71,6 +81,7 @@
     </div>
 
     <!-- Script -->
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/qrious/4.0.2/qrious.min.js"></script>
     <script src="script.js"></script>
 </body>
 </html>

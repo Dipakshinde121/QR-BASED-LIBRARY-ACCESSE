@@ -4,6 +4,12 @@ document.addEventListener('DOMContentLoaded', () => {
     const submitBtn = document.getElementById('submit-btn');
     const qrContainer = document.querySelector('.qr-card-container');
     const qrPlaceholder = document.getElementById('qr-placeholder');
+    
+    // Dynamic book details panel elements
+    const bookInfoCard = document.getElementById('book-info');
+    const bookTitle = document.getElementById('book-title');
+    const bookAuthor = document.getElementById('book-author');
+    const bookLocation = document.getElementById('book-location');
 
     // Submit button event listener
     submitBtn.addEventListener('click', () => {
@@ -18,7 +24,7 @@ document.addEventListener('DOMContentLoaded', () => {
     });
 
     /**
-     * Handles the validation and visualization logic for the pick-up number submission
+     * Handles the validation and execution of the pick-up lookup
      */
     function handlePickupSubmission() {
         // Capture and trim the input value
@@ -40,59 +46,134 @@ document.addEventListener('DOMContentLoaded', () => {
             return;
         }
 
-        // Log the captured text to the browser console as requested
-        console.log(`[Library Kiosk] Captured Pick-Up Number: "${inputValue}"`);
+        console.log(`[Library Kiosk] Querying pick-up number: "${inputValue}"`);
 
-        // Show generating state with animations
-        triggerScannerState(inputValue);
+        // Trigger loading and fetch backend API
+        fetchBookDetails(inputValue);
     }
 
     /**
-     * Triggers the scanning laser and transitions the placeholder to demonstrate interactivity
+     * Fetches book details from the backend database via the Express API
      */
-    function triggerScannerState(value) {
-        // Reset container classes
+    function fetchBookDetails(bookUid) {
+        // Prepare UI: Trigger scanning state and show loading indicator
         qrContainer.classList.remove('success');
         qrContainer.classList.add('scanning');
-
-        // Update placeholder to "generating" state
         qrPlaceholder.innerHTML = `
             <div class="qr-inner-content">
                 <i class="fa-solid fa-spinner fa-spin qr-icon" style="color: var(--accent-cyan);"></i>
-                <div class="qr-placeholder-text">Generating QR Code...</div>
-                <div class="qr-placeholder-subtext">Configuring access keys for pick-up</div>
+                <div class="qr-placeholder-text">Searching Database...</div>
+                <div class="qr-placeholder-subtext">Fetching book details from backend server</div>
             </div>
         `;
+        
+        // Hide book info from previous searches
+        bookInfoCard.style.display = 'none';
 
-        // Simulate QR code generation time (1.2 seconds)
-        setTimeout(() => {
-            // Remove scanning animation
-            qrContainer.classList.remove('scanning');
-            // Add success style class
-            qrContainer.classList.add('success');
+        // Express backend server runs on port 5000 (defined in .env)
+        const apiEndpoint = `http://localhost:5000/api/books/pickup/${encodeURIComponent(bookUid)}`;
 
-            // Render the success layout with the captured value
-            qrPlaceholder.innerHTML = `
-                <div class="qr-inner-content" style="opacity: 0; transform: translateY(10px); transition: var(--transition-smooth);">
-                    <i class="fa-solid fa-circle-check qr-icon"></i>
-                    <div class="qr-placeholder-text">Pick-Up Code Verified</div>
-                    <div class="qr-placeholder-subtext">Temporary Code Preview:</div>
-                    <div class="success-number">${value}</div>
-                    <div class="qr-placeholder-subtext" style="margin-top: 8px; font-size: 10px;">
-                        Interactive check complete. Ready for QR generator integration!
-                    </div>
-                </div>
-            `;
-
-            // Trigger reflow & fade in the success elements smoothly
-            setTimeout(() => {
-                const innerContent = qrPlaceholder.querySelector('.qr-inner-content');
-                if (innerContent) {
-                    innerContent.style.opacity = '1';
-                    innerContent.style.transform = 'translateY(0)';
+        fetch(apiEndpoint)
+            .then(response => {
+                if (!response.ok) {
+                    if (response.status === 404) {
+                        throw new Error('NOT_FOUND');
+                    } else {
+                        throw new Error('SERVER_ERROR');
+                    }
                 }
-            }, 50);
+                return response.json();
+            })
+            .then(book => {
+                console.log("[Library Kiosk] Book data fetched successfully:", book);
+                
+                // Add a small 1-second delay for smooth scanning visual transition
+                setTimeout(() => {
+                    // Reset scanner laser
+                    qrContainer.classList.remove('scanning');
+                    qrContainer.classList.add('success');
 
-        }, 1200);
+                    // 1. Populate and show the book info card above the QR placeholder
+                    bookTitle.textContent = book.title;
+                    bookAuthor.textContent = `by ${book.author}`;
+                    bookLocation.textContent = book.slot_location;
+                    bookInfoCard.style.display = 'block';
+
+                    // 2. Generate secure payload
+                    const securePayload = {
+                        book_uid: book.book_uid,
+                        timestamp: new Date().toISOString(),
+                        secure_hash: generateMockSecureHash(book.book_uid)
+                    };
+
+                    // 3. Clear placeholder and render real QR code canvas
+                    qrPlaceholder.innerHTML = '';
+                    
+                    const canvas = document.createElement('canvas');
+                    canvas.id = 'qr-canvas';
+                    canvas.style.opacity = '0';
+                    canvas.style.transform = 'scale(0.8)';
+                    canvas.style.transition = 'var(--transition-smooth)';
+                    qrPlaceholder.appendChild(canvas);
+
+                    new QRious({
+                        element: canvas,
+                        value: JSON.stringify(securePayload),
+                        size: 200,
+                        background: 'transparent',
+                        foreground: '#06b6d4', // Accent cyan color
+                        level: 'H'
+                    });
+
+                    // Trigger smooth entry transitions
+                    setTimeout(() => {
+                        canvas.style.opacity = '1';
+                        canvas.style.transform = 'scale(1)';
+                    }, 50);
+
+                }, 1000);
+            })
+            .catch(error => {
+                console.error("[Library Kiosk] API request failed:", error);
+                
+                // Reset loader state with transition
+                setTimeout(() => {
+                    qrContainer.classList.remove('scanning');
+                    resetPlaceholder();
+
+                    if (error.message === 'NOT_FOUND') {
+                        alert("Invalid pick-up number. Please try again.");
+                    } else {
+                        alert("Could not connect to the backend server. Make sure it is running on port 5000.");
+                    }
+                }, 1000);
+            });
+    }
+
+    /**
+     * Resets the QR placeholder back to its default inactive state
+     */
+    function resetPlaceholder() {
+        qrPlaceholder.innerHTML = `
+            <div class="qr-inner-content">
+                <i class="fa-solid fa-qrcode qr-icon"></i>
+                <div class="qr-placeholder-text">Awaiting Pick-Up Number</div>
+                <div class="qr-placeholder-subtext">Enter your number above to initialize the QR code</div>
+            </div>
+        `;
+    }
+
+    /**
+     * Generates a mock SHA-like secure session token/hash for the payload
+     */
+    function generateMockSecureHash(uid) {
+        const rawString = `${uid}-${new Date().getTime()}-SecureSaltKey`;
+        let hash = 0;
+        for (let i = 0; i < rawString.length; i++) {
+            const char = rawString.charCodeAt(i);
+            hash = ((hash << 5) - hash) + char;
+            hash |= 0; // Convert to 32bit integer
+        }
+        return Math.abs(hash).toString(16);
     }
 });

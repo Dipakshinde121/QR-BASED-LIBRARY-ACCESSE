@@ -4,8 +4,13 @@ require('dotenv').config();
 // Import the database connection to initialize it
 const db = require('./db');
 
+const cors = require('cors');
+
 const app = express();
 const PORT = process.env.PORT || 5000;
+
+// Enable CORS for cross-origin requests
+app.use(cors());
 
 // Middleware to parse JSON bodies
 app.use(express.json());
@@ -13,6 +18,9 @@ app.use(express.json());
 // Mount API routes
 const booksRouter = require('./routes/books');
 app.use('/api/books', booksRouter);
+
+const adminRouter = require('./routes/admin');
+app.use('/api/admin', adminRouter);
 
 // Basic health check endpoint
 app.get('/api/health', (req, res) => {

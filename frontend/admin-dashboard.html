@@ -1,0 +1,80 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Library Admin - Dashboard & Inventory</title>
+    <!-- Modern Typography: Outfit -->
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Outfit:wght@300;400;500;600;700&display=swap" rel="stylesheet">
+    <!-- FontAwesome for Premium Icons -->
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    <!-- Shared stylesheet -->
+    <link rel="stylesheet" href="style.css">
+</head>
+<body>
+    <!-- Background visual accents -->
+    <div class="bg-glow bg-glow-1"></div>
+    <div class="bg-glow bg-glow-2"></div>
+
+    <div class="kiosk-container" style="max-width: 900px; width: 100%;">
+        <!-- Dashboard Card -->
+        <main class="kiosk-card" style="padding: 30px;">
+            <!-- Header Navigation Bar -->
+            <header style="display: flex; justify-content: space-between; align-items: center; border-bottom: 1px solid var(--card-border); padding-bottom: 20px; margin-bottom: 30px; flex-wrap: wrap; gap: 15px;">
+                <div style="display: flex; align-items: center; gap: 15px;">
+                    <div class="logo-container" style="width: 50px; height: 50px; border-radius: 12px; margin-bottom: 0;">
+                        <i class="fa-solid fa-gauge-high logo-icon" style="font-size: 22px;"></i>
+                    </div>
+                    <div>
+                        <h1 style="font-size: 22px; font-weight: 700; margin-bottom: 2px;">Admin Dashboard</h1>
+                        <p class="subtitle" style="text-align: left;" id="admin-welcome">Welcome, Administrator</p>
+                    </div>
+                </div>
+                <!-- Logout Button -->
+                <button type="button" id="logout-btn" class="submit-btn" style="width: auto; padding: 10px 20px; background: linear-gradient(135deg, hsl(346, 84%, 61%), #e11d48); box-shadow: 0 4px 12px rgba(225, 29, 72, 0.25);">
+                    <span>Sign Out</span>
+                    <i class="fa-solid fa-right-from-bracket button-icon" style="font-size: 14px;"></i>
+                </button>
+            </header>
+
+            <!-- Book Inventory List Section -->
+            <section class="inventory-section">
+                <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 20px; flex-wrap: wrap; gap: 10px;">
+                    <h2 style="font-size: 18px; font-weight: 600; color: var(--text-primary); display: flex; align-items: center; gap: 8px;">
+                        <i class="fa-solid fa-boxes-stacked" style="color: var(--accent-cyan);"></i> Physical Book Inventory
+                    </h2>
+                    <span class="info-badge" id="inventory-count">Loading Inventory...</span>
+                </div>
+
+                <!-- Table Wrapper for responsive scrolling -->
+                <div class="table-container" style="overflow-x: auto; border-radius: var(--border-radius-md); border: 1px solid var(--card-border); background: rgba(13, 20, 35, 0.45); backdrop-filter: blur(10px);">
+                    <table style="width: 100%; border-collapse: collapse; text-align: left; font-size: 14px;">
+                        <thead>
+                            <tr style="background: rgba(255, 255, 255, 0.03); border-bottom: 1.5px solid var(--card-border);">
+                                <th style="padding: 16px 20px; font-weight: 600; color: var(--text-muted); text-transform: uppercase; letter-spacing: 0.5px; font-size: 12px;">Book ID</th>
+                                <th style="padding: 16px 20px; font-weight: 600; color: var(--text-muted); text-transform: uppercase; letter-spacing: 0.5px; font-size: 12px;">Title & Author</th>
+                                <th style="padding: 16px 20px; font-weight: 600; color: var(--text-muted); text-transform: uppercase; letter-spacing: 0.5px; font-size: 12px;">Location</th>
+                                <th style="padding: 16px 20px; font-weight: 600; color: var(--text-muted); text-transform: uppercase; letter-spacing: 0.5px; font-size: 12px;">Status</th>
+                            </tr>
+                        </thead>
+                        <tbody id="inventory-table-body">
+                            <!-- Table rows will be inserted here dynamically via admin-dashboard.js -->
+                            <tr id="table-loading-row">
+                                <td colspan="4" style="padding: 40px; text-align: center; color: var(--text-muted);">
+                                    <i class="fa-solid fa-spinner fa-spin" style="color: var(--accent-cyan); font-size: 24px; margin-bottom: 10px;"></i>
+                                    <div>Loading book database...</div>
+                                </td>
+                            </tr>
+                        </tbody>
+                    </table>
+                </div>
+            </section>
+        </main>
+    </div>
+
+    <!-- Script to handle session protection and inventory loading -->
+    <script src="admin-dashboard.js"></script>
+</body>
+</html>

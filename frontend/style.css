@@ -446,3 +446,130 @@ body {
     display: inline-block;
     letter-spacing: 1px;
 }
+
+/* Dynamic Book Info card styling */
+.book-info-card {
+    background: rgba(13, 20, 35, 0.45);
+    border: 1.5px solid var(--card-border);
+    border-radius: var(--border-radius-md);
+    padding: 16px 20px;
+    margin-bottom: 25px;
+    text-align: center;
+    backdrop-filter: blur(12px);
+    -webkit-backdrop-filter: blur(12px);
+    box-shadow: 0 8px 32px rgba(0, 0, 0, 0.2);
+    transition: var(--transition-smooth);
+    animation: slideDownFadeIn 0.5s cubic-bezier(0.4, 0, 0.2, 1);
+}
+
+.book-info-card:hover {
+    border-color: rgba(6, 182, 212, 0.3);
+    box-shadow: 0 10px 40px rgba(6, 182, 212, 0.05);
+}
+
+.book-info-card h3 {
+    font-size: 18px;
+    font-weight: 600;
+    color: var(--accent-cyan);
+    margin-bottom: 4px;
+    letter-spacing: -0.2px;
+}
+
+.book-info-card p {
+    font-size: 13px;
+    color: var(--text-muted);
+    margin-bottom: 12px;
+}
+
+.info-badge {
+    display: inline-flex;
+    align-items: center;
+    gap: 6px;
+    background: rgba(6, 182, 212, 0.08);
+    border: 1px solid rgba(6, 182, 212, 0.25);
+    color: var(--accent-cyan);
+    padding: 5px 12px;
+    border-radius: 20px;
+    font-size: 12px;
+    font-weight: 500;
+    letter-spacing: 0.2px;
+}
+
+.info-badge i {
+    font-size: 11px;
+}
+
+@keyframes slideDownFadeIn {
+    from {
+        opacity: 0;
+        transform: translateY(-15px);
+    }
+    to {
+        opacity: 1;
+        transform: translateY(0);
+    }
+}
+
+/* Dashboard Table and Status Badges */
+.table-container table tbody tr {
+    border-bottom: 1px solid var(--card-border);
+    transition: var(--transition-smooth);
+}
+
+.table-container table tbody tr:last-child {
+    border-bottom: none;
+}
+
+.table-container table tbody tr:hover {
+    background: rgba(255, 255, 255, 0.02);
+}
+
+.table-container th, 
+.table-container td {
+    padding: 16px 20px;
+    vertical-align: middle;
+}
+
+.table-container td {
+    color: var(--text-primary);
+}
+
+/* Status Badges */
+.status-badge {
+    display: inline-flex;
+    align-items: center;
+    gap: 6px;
+    padding: 5px 10px;
+    border-radius: 6px;
+    font-size: 11px;
+    font-weight: 600;
+    text-transform: uppercase;
+    letter-spacing: 0.5px;
+}
+
+.status-badge i {
+    font-size: 9px;
+}
+
+.status-available {
+    background: rgba(16, 185, 129, 0.08);
+    border: 1px solid rgba(16, 185, 129, 0.25);
+    color: hsl(142, 70%, 50%);
+    box-shadow: 0 0 10px rgba(16, 185, 129, 0.05);
+}
+
+.status-checked_out {
+    background: rgba(139, 92, 246, 0.08);
+    border: 1px solid rgba(139, 92, 246, 0.25);
+    color: hsl(263, 90%, 75%);
+    box-shadow: 0 0 10px rgba(139, 92, 246, 0.05);
+}
+
+.status-maintenance {
+    background: rgba(245, 158, 11, 0.08);
+    border: 1px solid rgba(245, 158, 11, 0.25);
+    color: hsl(38, 92%, 58%);
+    box-shadow: 0 0 10px rgba(245, 158, 11, 0.05);
+}
+
+
