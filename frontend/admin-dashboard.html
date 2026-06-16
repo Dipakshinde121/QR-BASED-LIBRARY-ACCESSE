@@ -18,7 +18,7 @@
     <div class="bg-glow bg-glow-1"></div>
     <div class="bg-glow bg-glow-2"></div>
 
-    <div class="kiosk-container" style="max-width: 900px; width: 100%;">
+    <div class="kiosk-container" style="max-width: 1000px; width: 100%;">
         <!-- Dashboard Card -->
         <main class="kiosk-card" style="padding: 30px;">
             <!-- Header Navigation Bar -->
@@ -39,17 +39,27 @@
                 </button>
             </header>
 
-            <!-- Book Inventory List Section -->
-            <section class="inventory-section">
+            <!-- Dashboard Tabs -->
+            <nav class="tabs-container" style="display: flex; gap: 10px; margin-bottom: 25px; border-bottom: 1.5px solid var(--card-border); padding-bottom: 12px;">
+                <button type="button" id="tab-inventory" class="tab-btn active" style="background: none; border: none; font-size: 14px; font-weight: 600; padding: 8px 16px; cursor: pointer; color: var(--text-primary); border-bottom: 3px solid var(--accent-cyan); transition: var(--transition-smooth); margin-bottom: -15px;">
+                    <i class="fa-solid fa-boxes-stacked" style="margin-right: 6px;"></i>Complete Inventory
+                </button>
+                <button type="button" id="tab-checkouts" class="tab-btn" style="background: none; border: none; font-size: 14px; font-weight: 600; padding: 8px 16px; cursor: pointer; color: var(--text-muted); border-bottom: 3px solid transparent; transition: var(--transition-smooth); margin-bottom: -15px;">
+                    <i class="fa-solid fa-clock-rotate-left" style="margin-right: 6px;"></i>Active Checkouts
+                </button>
+            </nav>
+
+            <!-- Section 1: Complete Book Inventory -->
+            <section id="section-inventory" class="dashboard-section active">
                 <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 20px; flex-wrap: wrap; gap: 10px;">
-                    <h2 style="font-size: 18px; font-weight: 600; color: var(--text-primary); display: flex; align-items: center; gap: 8px;">
-                        <i class="fa-solid fa-boxes-stacked" style="color: var(--accent-cyan);"></i> Physical Book Inventory
+                    <h2 style="font-size: 16px; font-weight: 600; color: var(--text-primary);">
+                        Physical Library Books
                     </h2>
                     <span class="info-badge" id="inventory-count">Loading Inventory...</span>
                 </div>
 
-                <!-- Table Wrapper for responsive scrolling -->
-                <div class="table-container" style="overflow-x: auto; border-radius: var(--border-radius-md); border: 1px solid var(--card-border); background: rgba(13, 20, 35, 0.45); backdrop-filter: blur(10px);">
+                <!-- Table Wrapper -->
+                <div class="table-container">
                     <table style="width: 100%; border-collapse: collapse; text-align: left; font-size: 14px;">
                         <thead>
                             <tr style="background: rgba(255, 255, 255, 0.03); border-bottom: 1.5px solid var(--card-border);">
@@ -60,11 +70,42 @@
                             </tr>
                         </thead>
                         <tbody id="inventory-table-body">
-                            <!-- Table rows will be inserted here dynamically via admin-dashboard.js -->
                             <tr id="table-loading-row">
                                 <td colspan="4" style="padding: 40px; text-align: center; color: var(--text-muted);">
                                     <i class="fa-solid fa-spinner fa-spin" style="color: var(--accent-cyan); font-size: 24px; margin-bottom: 10px;"></i>
                                     <div>Loading book database...</div>
+                                </td>
+                            </tr>
+                        </tbody>
+                    </table>
+                </div>
+            </section>
+
+            <!-- Section 2: Active Checkouts -->
+            <section id="section-checkouts" class="dashboard-section" style="display: none;">
+                <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 20px; flex-wrap: wrap; gap: 10px;">
+                    <h2 style="font-size: 16px; font-weight: 600; color: var(--text-primary);">
+                        Checked Out Book Records
+                    </h2>
+                    <span class="info-badge" id="checkouts-count">Loading Logs...</span>
+                </div>
+
+                <!-- Table Wrapper -->
+                <div class="table-container">
+                    <table style="width: 100%; border-collapse: collapse; text-align: left; font-size: 14px;">
+                        <thead>
+                            <tr style="background: rgba(255, 255, 255, 0.03); border-bottom: 1.5px solid var(--card-border);">
+                                <th style="padding: 16px 20px; font-weight: 600; color: var(--text-muted); text-transform: uppercase; letter-spacing: 0.5px; font-size: 12px;">Student Profile</th>
+                                <th style="padding: 16px 20px; font-weight: 600; color: var(--text-muted); text-transform: uppercase; letter-spacing: 0.5px; font-size: 12px;">Book Details</th>
+                                <th style="padding: 16px 20px; font-weight: 600; color: var(--text-muted); text-transform: uppercase; letter-spacing: 0.5px; font-size: 12px;">Checkout Date</th>
+                                <th style="padding: 16px 20px; font-weight: 600; color: var(--text-muted); text-transform: uppercase; letter-spacing: 0.5px; font-size: 12px;">Time Remaining</th>
+                            </tr>
+                        </thead>
+                        <tbody id="checkouts-table-body">
+                            <tr id="checkouts-loading-row">
+                                <td colspan="4" style="padding: 40px; text-align: center; color: var(--text-muted);">
+                                    <i class="fa-solid fa-spinner fa-spin" style="color: var(--accent-cyan); font-size: 24px; margin-bottom: 10px;"></i>
+                                    <div>Loading transaction logs...</div>
                                 </td>
                             </tr>
                         </tbody>

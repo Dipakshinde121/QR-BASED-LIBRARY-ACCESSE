@@ -1,19 +1,23 @@
-/* CSS Custom Properties for Design System */
+/* CSS Custom Properties for Design System (Clean UI Light Mode) */
 :root {
-    --bg-primary: hsl(222, 47%, 7%);
-    --bg-secondary: hsl(222, 47%, 11%);
-    --card-bg: hsla(222, 47%, 14%, 0.5);
-    --card-border: hsla(222, 47%, 25%, 0.45);
+    --bg-primary: #f8fafc;
+    --bg-secondary: #f1f5f9;
+    --card-bg: #ffffff;
+    --card-border: #e2e8f0;
     
-    /* Neon gradients */
-    --accent-purple: hsl(263, 90%, 65%);
-    --accent-cyan: hsl(190, 95%, 50%);
-    --accent-glow: hsla(263, 90%, 65%, 0.3);
+    /* Brand Accents */
+    --accent-purple: #6d28d9;
+    --accent-cyan: #0891b2;
+    --accent-glow: rgba(109, 40, 217, 0.06);
     
     /* Typography colors */
-    --text-primary: hsl(210, 40%, 98%);
-    --text-muted: hsl(215, 20%, 65%);
-    --text-glow: hsla(190, 95%, 50%, 0.4);
+    --text-primary: #0f172a;
+    --text-muted: #64748b;
+    --text-glow: rgba(8, 145, 178, 0.1);
+    
+    /* Inputs */
+    --input-bg: #f8fafc;
+    --input-border: #cbd5e1;
     
     /* Animations */
     --transition-smooth: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
@@ -92,22 +96,17 @@ body {
 .kiosk-card {
     background: var(--card-bg);
     border: 1px solid var(--card-border);
-    backdrop-filter: blur(20px);
-    -webkit-backdrop-filter: blur(20px);
     border-radius: var(--border-radius-lg);
     padding: 40px 30px;
     width: 100%;
-    box-shadow: 0 20px 50px rgba(0, 0, 0, 0.4), 
-                inset 0 1px 0 rgba(255, 255, 255, 0.1);
+    box-shadow: 0 4px 20px rgba(0, 0, 0, 0.05);
     transform: translateY(0);
     transition: var(--transition-smooth);
 }
 
 .kiosk-card:hover {
-    border-color: hsla(190, 95%, 50%, 0.35);
-    box-shadow: 0 25px 60px rgba(0, 0, 0, 0.5), 
-                0 0 30px rgba(190, 95, 50, 0.05),
-                inset 0 1px 0 rgba(255, 255, 255, 0.15);
+    border-color: rgba(109, 40, 217, 0.15);
+    box-shadow: 0 12px 30px rgba(0, 0, 0, 0.08);
 }
 
 /* Header Styling */
@@ -202,11 +201,11 @@ body {
 }
 
 /* Premium Input styling */
-#pickup-input {
+#pickup-input, #admin-email, #admin-password {
     width: 100%;
     padding: 16px 16px 16px 48px;
-    background: rgba(13, 20, 35, 0.6);
-    border: 1.5px solid var(--card-border);
+    background: var(--input-bg);
+    border: 1.5px solid var(--input-border);
     border-radius: var(--border-radius-md);
     color: var(--text-primary);
     font-size: 16px;
@@ -216,17 +215,17 @@ body {
     transition: var(--transition-smooth);
 }
 
-#pickup-input::placeholder {
-    color: hsla(215, 20%, 65%, 0.4);
+#pickup-input::placeholder, #admin-email::placeholder, #admin-password::placeholder {
+    color: hsla(215, 20%, 65%, 0.5);
 }
 
-#pickup-input:focus {
+#pickup-input:focus, #admin-email:focus, #admin-password:focus {
     border-color: var(--accent-cyan);
-    background: rgba(13, 20, 35, 0.85);
-    box-shadow: 0 0 20px rgba(6, 182, 212, 0.15);
+    background: #ffffff;
+    box-shadow: 0 0 15px rgba(8, 145, 178, 0.08);
 }
 
-#pickup-input:focus + .input-icon {
+#pickup-input:focus + .input-icon, #admin-email:focus + .input-icon, #admin-password:focus + .input-icon {
     color: var(--accent-cyan);
 }
 
@@ -554,22 +553,38 @@ body {
 .status-available {
     background: rgba(16, 185, 129, 0.08);
     border: 1px solid rgba(16, 185, 129, 0.25);
-    color: hsl(142, 70%, 50%);
-    box-shadow: 0 0 10px rgba(16, 185, 129, 0.05);
+    color: #059669;
 }
 
 .status-checked_out {
-    background: rgba(139, 92, 246, 0.08);
-    border: 1px solid rgba(139, 92, 246, 0.25);
-    color: hsl(263, 90%, 75%);
-    box-shadow: 0 0 10px rgba(139, 92, 246, 0.05);
+    background: rgba(109, 40, 217, 0.08);
+    border: 1px solid rgba(109, 40, 217, 0.25);
+    color: #6d28d9;
 }
 
 .status-maintenance {
     background: rgba(245, 158, 11, 0.08);
     border: 1px solid rgba(245, 158, 11, 0.25);
-    color: hsl(38, 92%, 58%);
-    box-shadow: 0 0 10px rgba(245, 158, 11, 0.05);
+    color: #d97706;
+}
+
+/* Time Remaining Status badges */
+.status-ok {
+    background: rgba(16, 185, 129, 0.08);
+    border: 1px solid rgba(16, 185, 129, 0.25);
+    color: #059669;
+}
+
+.status-warning {
+    background: rgba(245, 158, 11, 0.08);
+    border: 1px solid rgba(245, 158, 11, 0.25);
+    color: #d97706;
+}
+
+.status-overdue {
+    background: rgba(239, 68, 68, 0.08);
+    border: 1px solid rgba(239, 68, 68, 0.25);
+    color: #dc2626;
 }
 
 

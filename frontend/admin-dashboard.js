@@ -12,8 +12,15 @@ document.addEventListener('DOMContentLoaded', () => {
     // DOM Elements
     const adminWelcome = document.getElementById('admin-welcome');
     const logoutBtn = document.getElementById('logout-btn');
-    const tableBody = document.getElementById('inventory-table-body');
+    const inventoryTableBody = document.getElementById('inventory-table-body');
     const inventoryCount = document.getElementById('inventory-count');
+    
+    const tabInventory = document.getElementById('tab-inventory');
+    const tabCheckouts = document.getElementById('tab-checkouts');
+    const sectionInventory = document.getElementById('section-inventory');
+    const sectionCheckouts = document.getElementById('section-checkouts');
+    const checkoutsTableBody = document.getElementById('checkouts-table-body');
+    const checkoutsCount = document.getElementById('checkouts-count');
 
     // Update Welcome Title
     adminWelcome.textContent = `Welcome, ${adminUser.name}`;
@@ -24,14 +31,48 @@ document.addEventListener('DOMContentLoaded', () => {
         window.location.href = 'admin-login.html';
     });
 
-    // Load Live Inventory
+    // Tab Switching Logic
+    tabInventory.addEventListener('click', () => {
+        switchTab('inventory');
+    });
+
+    tabCheckouts.addEventListener('click', () => {
+        switchTab('checkouts');
+    });
+
+    function switchTab(tabName) {
+        if (tabName === 'inventory') {
+            tabInventory.classList.add('active');
+            tabCheckouts.classList.remove('active');
+            tabInventory.style.color = 'var(--text-primary)';
+            tabInventory.style.borderBottom = '3px solid var(--accent-cyan)';
+            tabCheckouts.style.color = 'var(--text-muted)';
+            tabCheckouts.style.borderBottom = '3px solid transparent';
+
+            sectionInventory.style.display = 'block';
+            sectionCheckouts.style.display = 'none';
+            fetchInventory();
+        } else {
+            tabCheckouts.classList.add('active');
+            tabInventory.classList.remove('active');
+            tabCheckouts.style.color = 'var(--text-primary)';
+            tabCheckouts.style.borderBottom = '3px solid var(--accent-cyan)';
+            tabInventory.style.color = 'var(--text-muted)';
+            tabInventory.style.borderBottom = '3px solid transparent';
+
+            sectionCheckouts.style.display = 'block';
+            sectionInventory.style.display = 'none';
+            fetchActiveCheckouts();
+        }
+    }
+
+    // Load initial tab data
     fetchInventory();
 
     /**
      * Fetches all books from backend database and populates the dashboard UI table
      */
     function fetchInventory() {
-        // API Endpoint (defined in backend/routes/admin.js)
         const apiEndpoint = 'http://localhost:5000/api/admin/inventory';
 
         fetch(apiEndpoint)
@@ -47,11 +88,11 @@ document.addEventListener('DOMContentLoaded', () => {
                 // Update Total Count Badge
                 inventoryCount.textContent = `${books.length} Books Registered`;
 
-                // Clear Loading Row
-                tableBody.innerHTML = '';
+                // Clear Table Body
+                inventoryTableBody.innerHTML = '';
 
                 if (books.length === 0) {
-                    tableBody.innerHTML = `
+                    inventoryTableBody.innerHTML = `
                         <tr>
                             <td colspan="4" style="padding: 45px; text-align: center; color: var(--text-muted);">
                                 <i class="fa-solid fa-folder-open" style="font-size: 24px; margin-bottom: 10px; opacity: 0.5;"></i>
@@ -92,17 +133,125 @@ document.addEventListener('DOMContentLoaded', () => {
                             </span>
                         </td>
                     `;
-                    tableBody.appendChild(row);
+                    inventoryTableBody.appendChild(row);
                 });
             })
             .catch(error => {
                 console.error('[Admin Dashboard] Fetch error:', error);
                 inventoryCount.textContent = 'Connection Error';
-                tableBody.innerHTML = `
+                inventoryTableBody.innerHTML = `
                     <tr>
                         <td colspan="4" style="padding: 45px; text-align: center; color: hsl(346, 84%, 61%);">
                             <i class="fa-solid fa-circle-exclamation" style="font-size: 24px; margin-bottom: 10px;"></i>
                             <div>Failed to load inventory. Connect your backend server.</div>
+                            <div style="font-size: 12px; margin-top: 5px; opacity: 0.8;">Error: ${error.message}</div>
+                        </td>
+                    </tr>
+                `;
+            });
+    }
+
+    /**
+     * Fetches all active checkouts from backend database and populates the checkouts table
+     */
+    function fetchActiveCheckouts() {
+        const apiEndpoint = 'http://localhost:5000/api/admin/active-checkouts';
+
+        fetch(apiEndpoint)
+            .then(response => {
+                if (!response.ok) {
+                    throw new Error('Failed to fetch active checkouts.');
+                }
+                return response.json();
+            })
+            .then(checkouts => {
+                console.log('[Admin Dashboard] Active checkouts loaded:', checkouts);
+                
+                // Update Count Badge
+                checkoutsCount.textContent = `${checkouts.length} Active Checkouts`;
+
+                // Clear Table Body
+                checkoutsTableBody.innerHTML = '';
+
+                if (checkouts.length === 0) {
+                    checkoutsTableBody.innerHTML = `
+                        <tr>
+                            <td colspan="4" style="padding: 45px; text-align: center; color: var(--text-muted);">
+                                <i class="fa-solid fa-clock-rotate-left" style="font-size: 24px; margin-bottom: 10px; opacity: 0.5;"></i>
+                                <div>No active checkouts found.</div>
+                            </td>
+                        </tr>
+                    `;
+                    return;
+                }
+
+                // Loop through checkouts and create rows
+                checkouts.forEach(checkout => {
+                    const row = document.createElement('tr');
+                    
+                    // Format Checkout Date
+                    const checkoutDate = new Date(checkout.checkout_time);
+                    const formattedCheckoutDate = checkoutDate.toLocaleDateString(undefined, {
+                        year: 'numeric',
+                        month: 'short',
+                        day: 'numeric',
+                        hour: '2-digit',
+                        minute: '2-digit'
+                    });
+
+                    // Date Math for Time Remaining
+                    const dueDate = new Date(checkout.due_time);
+                    const now = new Date();
+                    const diffMs = dueDate - now;
+                    const diffDays = Math.ceil(diffMs / (1000 * 60 * 60 * 24));
+                    
+                    let remainingClass = '';
+                    let remainingText = '';
+                    let remainingIcon = '';
+
+                    if (diffMs < 0) {
+                        remainingClass = 'status-overdue';
+                        remainingText = 'Overdue';
+                        remainingIcon = 'fa-triangle-exclamation';
+                    } else if (diffDays <= 3) {
+                        remainingClass = 'status-warning';
+                        remainingText = `${diffDays} day${diffDays !== 1 ? 's' : ''} left`;
+                        remainingIcon = 'fa-hourglass-half';
+                    } else {
+                        remainingClass = 'status-ok';
+                        remainingText = `${diffDays} days left`;
+                        remainingIcon = 'fa-circle-check';
+                    }
+
+                    row.innerHTML = `
+                        <td>
+                            <div style="font-weight: 500; color: var(--text-primary); margin-bottom: 2px;">${checkout.student_name}</div>
+                            <div style="font-size: 12px; color: var(--text-muted); font-family: monospace;">Roll: ${checkout.student_roll}</div>
+                        </td>
+                        <td>
+                            <div style="font-weight: 500; color: var(--text-primary); margin-bottom: 2px;">${checkout.book_title}</div>
+                            <div style="font-size: 12px; color: var(--text-muted); font-family: monospace;">ID: ${checkout.book_uid}</div>
+                        </td>
+                        <td style="color: var(--text-muted); font-size: 13px;">
+                            <i class="fa-regular fa-calendar-days" style="margin-right: 5px;"></i>${formattedCheckoutDate}
+                        </td>
+                        <td>
+                            <span class="status-badge ${remainingClass}">
+                                <i class="fa-solid ${remainingIcon}"></i> ${remainingText}
+                            </span>
+                        </td>
+                    `;
+                    checkoutsTableBody.appendChild(row);
+                });
+            })
+            .catch(error => {
+                console.error('[Admin Dashboard] Checkouts fetch error:', error);
+                checkoutsCount.textContent = 'Connection Error';
+                checkoutsTableBody.innerHTML = `
+                    <tr>
+                        <td colspan="4" style="padding: 45px; text-align: center; color: hsl(346, 84%, 61%);">
+                            <i class="fa-solid fa-circle-exclamation" style="font-size: 24px; margin-bottom: 10px;"></i>
+                            <div>Failed to load checkouts. Connect your backend server.</div>
                             <div style="font-size: 12px; margin-top: 5px; opacity: 0.8;">Error: ${error.message}</div>
                         </td>
                     </tr>

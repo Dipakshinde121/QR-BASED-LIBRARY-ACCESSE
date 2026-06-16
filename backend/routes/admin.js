@@ -102,4 +102,41 @@ router.get('/inventory', async (req, res) => {
     }
 });
 
+/**
+ * GET /api/admin/active-checkouts
+ * Description: Fetches all active library checkout transactions using SQL JOINs
+ * Response:
+ *   - 200 OK: Returns array of active checkout objects
+ *   - 500 Internal Error: Database query failure
+ */
+router.get('/active-checkouts', async (req, res) => {
+    try {
+        console.log('[Backend Admin] Fetching active checkouts log...');
+        const query = `
+            SELECT 
+                t.id, 
+                t.checkout_time, 
+                t.due_time, 
+                t.status,
+                u.name AS student_name, 
+                u.roll_number AS student_roll, 
+                b.title AS book_title,
+                b.book_uid
+            FROM transactions t
+            JOIN users u ON t.user_id = u.id
+            JOIN books b ON t.book_id = b.id
+            WHERE t.return_time IS NULL AND t.status != 'returned'
+            ORDER BY t.checkout_time DESC
+        `;
+        const [checkouts] = await db.query(query);
+        return res.status(200).json(checkouts);
+    } catch (error) {
+        console.error('[Backend Admin] Error fetching active checkouts:', error.message);
+        return res.status(500).json({
+            message: 'Database query error.',
+            error: error.message
+        });
+    }
+});
+
 module.exports = router;
