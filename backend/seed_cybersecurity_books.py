@@ -1,5 +1,6 @@
 import os
 import pymysql
+# pyrefly: ignore [missing-import]
 from dotenv import load_dotenv
 
 # Ensure env variables are loaded from the local .env

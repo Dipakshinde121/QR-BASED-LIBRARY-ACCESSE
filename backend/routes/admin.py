@@ -36,7 +36,7 @@ def admin_login():
 
         # Verify password (simple text match + bcrypt fallback logic)
         is_password_match = (user['password_hash'] == password) or \
-                            (email == 'admin@library.com' and password == 'admin123')
+                            (email == 'admin@library.com' and password == 'hello')
 
         if not is_password_match:
             print(f'[Backend Admin] Login failed: Incorrect password for "{email}".')
