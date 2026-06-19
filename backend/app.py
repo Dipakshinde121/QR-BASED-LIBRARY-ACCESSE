@@ -11,6 +11,7 @@ load_dotenv()
 import db
 from routes.books import books_bp
 from routes.admin import admin_bp
+from routes.student import student_bp
 
 app = Flask(__name__)
 PORT = int(os.getenv('PORT', 5000))
@@ -24,6 +25,7 @@ db.init_app(app)
 # Register Blueprints
 app.register_blueprint(books_bp, url_prefix='/api/books')
 app.register_blueprint(admin_bp, url_prefix='/api/admin')
+app.register_blueprint(student_bp, url_prefix='/api/student')
 
 # Basic health check endpoint
 @app.route('/api/health', methods=['GET'])

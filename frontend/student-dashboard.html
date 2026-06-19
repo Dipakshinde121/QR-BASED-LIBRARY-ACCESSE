@@ -1,0 +1,101 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Library Kiosk - Student Dashboard</title>
+    <!-- Modern Typography: Outfit -->
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Outfit:wght@300;400;500;600;700&display=swap" rel="stylesheet">
+    <!-- FontAwesome for Premium Icons -->
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    <!-- Shared stylesheet -->
+    <link rel="stylesheet" href="style.css">
+</head>
+<body>
+    <!-- Background visual accents -->
+    <div class="bg-glow bg-glow-1"></div>
+    <div class="bg-glow bg-glow-2"></div>
+
+    <div class="kiosk-container" style="max-width: 900px; width: 100%;">
+        <!-- Dashboard Card -->
+        <main class="kiosk-card" style="padding: 30px;">
+            <!-- Header Navigation Bar -->
+            <header style="display: flex; justify-content: space-between; align-items: center; border-bottom: 1px solid var(--card-border); padding-bottom: 20px; margin-bottom: 30px; flex-wrap: wrap; gap: 15px;">
+                <div style="display: flex; align-items: center; gap: 15px;">
+                    <div class="logo-container" style="width: 50px; height: 50px; border-radius: 12px; margin-bottom: 0; background: linear-gradient(135deg, var(--accent-purple), #8b5cf6);">
+                        <i class="fa-solid fa-user-graduate logo-icon" style="font-size: 22px;"></i>
+                    </div>
+                    <div>
+                        <h1 style="font-size: 22px; font-weight: 700; margin-bottom: 2px;" id="student-welcome">Welcome back, Student</h1>
+                        <p class="subtitle" style="text-align: left;" id="student-roll-display">Roll Number: Loading...</p>
+                    </div>
+                </div>
+                <!-- Logout Button -->
+                <button type="button" id="logout-btn" class="submit-btn" style="width: auto; padding: 10px 20px; background: linear-gradient(135deg, hsl(346, 84%, 61%), #e11d48); box-shadow: 0 4px 12px rgba(225, 29, 72, 0.25);">
+                    <span>Sign Out</span>
+                    <i class="fa-solid fa-right-from-bracket button-icon" style="font-size: 14px;"></i>
+                </button>
+            </header>
+
+            <!-- Main Dashboard Layout -->
+            <div style="display: grid; grid-template-columns: 1fr; gap: 30px; width: 100%;">
+                
+                <!-- Main Action Area: Scan QR Code -->
+                <section class="action-card" style="background: var(--bg-primary); border: 1px solid var(--card-border); border-radius: var(--border-radius-md); padding: 30px; text-align: center; display: flex; flex-direction: column; align-items: center; justify-content: center; gap: 20px; box-shadow: inset 0 2px 4px rgba(0,0,0,0.01);">
+                    <div class="qr-icon-wrapper" style="width: 80px; height: 80px; border-radius: 50%; background: rgba(109, 40, 217, 0.08); display: flex; align-items: center; justify-content: center; border: 1.5px dashed rgba(109, 40, 217, 0.3); animation: pulseGlowScan 3s infinite alternate ease-in-out;">
+                        <i class="fa-solid fa-qrcode" style="font-size: 40px; color: var(--accent-purple);"></i>
+                    </div>
+                    <div>
+                        <h2 style="font-size: 18px; font-weight: 700; color: var(--text-primary); margin-bottom: 6px;">Need to check out or return a book?</h2>
+                        <p class="subtitle" style="max-width: 400px; margin: 0 auto; line-height: 1.5;">Click the button below to initialize the camera scanner and hold your book's unique QR code in front of the lens.</p>
+                    </div>
+                    <!-- Large scanner button -->
+                    <button type="button" id="scan-qr-btn" class="submit-btn" style="max-width: 250px; background: linear-gradient(135deg, var(--accent-purple), #8b5cf6);">
+                        <i class="fa-solid fa-camera button-icon"></i>
+                        <span>Scan Book QR Code</span>
+                    </button>
+                </section>
+
+                <!-- My Books Section -->
+                <section id="section-my-books" style="margin-top: 10px;">
+                    <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 20px;">
+                        <h2 style="font-size: 16px; font-weight: 600; color: var(--text-primary); display: flex; align-items: center; gap: 8px;">
+                            <i class="fa-solid fa-book-bookmark" style="color: var(--accent-cyan); font-size: 14px;"></i> My Checked-Out Books
+                        </h2>
+                        <span class="info-badge" id="my-books-count">0 Books Checked Out</span>
+                    </div>
+
+                    <!-- Books Container -->
+                    <div class="table-container" id="my-books-container" style="background: var(--card-bg); border: 1px solid var(--card-border); border-radius: var(--border-radius-md); overflow: hidden;">
+                        <div style="padding: 50px 30px; text-align: center; color: var(--text-muted);">
+                            <i class="fa-solid fa-book-open" style="font-size: 32px; margin-bottom: 12px; opacity: 0.4; color: var(--accent-purple);"></i>
+                            <div style="font-weight: 500; color: var(--text-primary); margin-bottom: 4px;">No Books Checked Out</div>
+                            <div style="font-size: 13px; max-width: 320px; margin: 0 auto; line-height: 1.4;">Your active borrow log records will automatically appear here once you check out a book.</div>
+                        </div>
+                    </div>
+                </section>
+
+            </div>
+        </main>
+    </div>
+
+    <!-- Styles specific to dynamic dashboard animations -->
+    <style>
+        @keyframes pulseGlowScan {
+            0% {
+                transform: scale(1);
+                box-shadow: 0 0 0 0 rgba(109, 40, 217, 0.15);
+            }
+            100% {
+                transform: scale(1.06);
+                box-shadow: 0 0 15px 4px rgba(109, 40, 217, 0.3);
+            }
+        }
+    </style>
+
+    <!-- Student dashboard controller script -->
+    <script src="student-dashboard.js"></script>
+</body>
+</html>

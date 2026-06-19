@@ -1,0 +1,87 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Library Kiosk - Student Login</title>
+    <!-- Modern Typography: Outfit -->
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Outfit:wght@300;400;500;600;700&display=swap" rel="stylesheet">
+    <!-- FontAwesome for Premium Icons -->
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    <!-- Shared stylesheet -->
+    <link rel="stylesheet" href="style.css">
+</head>
+<body>
+    <!-- Background visual accents -->
+    <div class="bg-glow bg-glow-1"></div>
+    <div class="bg-glow bg-glow-2"></div>
+
+    <div class="kiosk-container">
+        <!-- Login Card -->
+        <main class="kiosk-card">
+            <!-- Header -->
+            <header class="kiosk-header">
+                <div class="logo-container" style="background: linear-gradient(135deg, var(--accent-purple), #8b5cf6);">
+                    <i class="fa-solid fa-user-graduate logo-icon"></i>
+                </div>
+                <h1>Student Portal</h1>
+                <p class="subtitle">Access your Library Account</p>
+            </header>
+
+            <!-- Login Form -->
+            <form id="student-login-form" class="form-section">
+                <!-- Roll Number Input -->
+                <div class="input-group">
+                    <label for="student-roll" class="input-label">Roll Number</label>
+                    <div class="input-wrapper">
+                        <i class="fa-solid fa-id-card input-icon"></i>
+                        <input 
+                            type="text" 
+                            id="student-roll" 
+                            placeholder="ST-2026-01" 
+                            autocomplete="username" 
+                            required
+                        >
+                    </div>
+                </div>
+
+                <!-- Password Input -->
+                <div class="input-group">
+                    <label for="student-password" class="input-label">Password</label>
+                    <div class="input-wrapper">
+                        <i class="fa-solid fa-lock input-icon"></i>
+                        <input 
+                            type="password" 
+                            id="student-password" 
+                            placeholder="••••••••" 
+                            autocomplete="current-password" 
+                            required
+                        >
+                    </div>
+                </div>
+
+                <!-- Submit Button -->
+                <button type="submit" id="student-login-btn" class="submit-btn" style="background: linear-gradient(135deg, var(--accent-purple), #8b5cf6);">
+                    <span>Login</span>
+                    <i class="fa-solid fa-right-to-bracket button-icon"></i>
+                </button>
+            </form>
+
+            <!-- Navigation Links -->
+            <footer style="margin-top: 25px; display: flex; flex-direction: column; gap: 12px; align-items: center; justify-content: center;">
+                <a href="index.html" style="color: var(--text-muted); font-size: 13px; text-decoration: none; transition: var(--transition-smooth); display: inline-flex; align-items: center; gap: 6px;">
+                    <i class="fa-solid fa-arrow-left"></i> Back to Kiosk
+                </a>
+                <a href="admin-login.html" style="color: var(--accent-cyan); font-size: 13px; text-decoration: none; transition: var(--transition-smooth); font-weight: 500;">
+                    Are you an Admin? Sign in here
+                </a>
+            </footer>
+        </main>
+    </div>
+
+    <!-- Script to handle authentication -->
+    <script src="student.js"></script>
+</body>
+</html>
