@@ -64,16 +64,59 @@
                         <h2 style="font-size: 16px; font-weight: 600; color: var(--text-primary); display: flex; align-items: center; gap: 8px;">
                             <i class="fa-solid fa-book-bookmark" style="color: var(--accent-cyan); font-size: 14px;"></i> My Checked-Out Books
                         </h2>
-                        <span class="info-badge" id="my-books-count">0 Books Checked Out</span>
+                        <span class="info-badge" id="my-books-count">Loading Books...</span>
                     </div>
 
                     <!-- Books Container -->
-                    <div class="table-container" id="my-books-container" style="background: var(--card-bg); border: 1px solid var(--card-border); border-radius: var(--border-radius-md); overflow: hidden;">
-                        <div style="padding: 50px 30px; text-align: center; color: var(--text-muted);">
-                            <i class="fa-solid fa-book-open" style="font-size: 32px; margin-bottom: 12px; opacity: 0.4; color: var(--accent-purple);"></i>
-                            <div style="font-weight: 500; color: var(--text-primary); margin-bottom: 4px;">No Books Checked Out</div>
-                            <div style="font-size: 13px; max-width: 320px; margin: 0 auto; line-height: 1.4;">Your active borrow log records will automatically appear here once you check out a book.</div>
-                        </div>
+                    <div class="table-container" style="background: var(--card-bg); border: 1px solid var(--card-border); border-radius: var(--border-radius-md); overflow: hidden;">
+                        <table style="width: 100%; border-collapse: collapse; text-align: left; font-size: 14px;">
+                            <thead>
+                                <tr style="background: rgba(255, 255, 255, 0.03); border-bottom: 1.5px solid var(--card-border);">
+                                    <th style="padding: 16px 20px; font-weight: 600; color: var(--text-muted); text-transform: uppercase; letter-spacing: 0.5px; font-size: 12px;">Book Details</th>
+                                    <th style="padding: 16px 20px; font-weight: 600; color: var(--text-muted); text-transform: uppercase; letter-spacing: 0.5px; font-size: 12px;">Location Slot</th>
+                                    <th style="padding: 16px 20px; font-weight: 600; color: var(--text-muted); text-transform: uppercase; letter-spacing: 0.5px; font-size: 12px;">Checkout Date</th>
+                                    <th style="padding: 16px 20px; font-weight: 600; color: var(--text-muted); text-transform: uppercase; letter-spacing: 0.5px; font-size: 12px;">Time Remaining</th>
+                                </tr>
+                            </thead>
+                            <tbody id="my-books-table-body">
+                                <tr id="my-books-loading-row">
+                                    <td colspan="4" style="padding: 40px; text-align: center; color: var(--text-muted);">
+                                        <i class="fa-solid fa-spinner fa-spin" style="color: var(--accent-cyan); font-size: 24px; margin-bottom: 10px;"></i>
+                                        <div>Loading borrow records...</div>
+                                    </td>
+                                </tr>
+                            </tbody>
+                        </table>
+                    </div>
+                </section>
+
+                <!-- Available Books Section -->
+                <section id="section-available-books" style="margin-top: 10px;">
+                    <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 20px;">
+                        <h2 style="font-size: 16px; font-weight: 600; color: var(--text-primary); display: flex; align-items: center; gap: 8px;">
+                            <i class="fa-solid fa-list-check" style="color: var(--accent-purple); font-size: 14px;"></i> Available Books in Library
+                        </h2>
+                        <span class="info-badge" id="available-books-count" style="background: rgba(109, 40, 217, 0.08); border-color: rgba(109, 40, 217, 0.25); color: var(--accent-purple);">Loading Catalog...</span>
+                    </div>
+
+                    <!-- Available Books Container -->
+                    <div class="table-container" style="background: var(--card-bg); border: 1px solid var(--card-border); border-radius: var(--border-radius-md); overflow: hidden;">
+                        <table style="width: 100%; border-collapse: collapse; text-align: left; font-size: 14px;">
+                            <thead>
+                                <tr style="background: rgba(255, 255, 255, 0.03); border-bottom: 1.5px solid var(--card-border);">
+                                    <th style="padding: 16px 20px; font-weight: 600; color: var(--text-muted); text-transform: uppercase; letter-spacing: 0.5px; font-size: 12px;">Book Title & Author</th>
+                                    <th style="padding: 16px 20px; font-weight: 600; color: var(--text-muted); text-transform: uppercase; letter-spacing: 0.5px; font-size: 12px;">Physical Location Slot</th>
+                                </tr>
+                            </thead>
+                            <tbody id="available-books-table-body">
+                                <tr id="available-books-loading-row">
+                                    <td colspan="2" style="padding: 40px; text-align: center; color: var(--text-muted);">
+                                        <i class="fa-solid fa-spinner fa-spin" style="color: var(--accent-purple); font-size: 24px; margin-bottom: 10px;"></i>
+                                        <div>Loading available books...</div>
+                                    </td>
+                                </tr>
+                            </tbody>
+                        </table>
                     </div>
                 </section>
 

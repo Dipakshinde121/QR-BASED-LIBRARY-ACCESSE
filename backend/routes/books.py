@@ -37,3 +37,25 @@ def get_book_by_uid(book_uid):
             'message': 'Database query error',
             'error': str(error)
         }), 500
+
+@books_bp.route('/available', methods=['GET'])
+def get_available_books():
+    """
+    GET /api/books/available
+    Retrieves all library books that are currently available.
+    """
+    try:
+        print('[Backend] Fetching available library books catalog...')
+        db = get_db()
+        with db.cursor() as cursor:
+            sql = 'SELECT id, book_uid, title, author, slot_location, status FROM books WHERE status = %s ORDER BY id ASC'
+            cursor.execute(sql, ('available',))
+            books = cursor.fetchall()
+        return jsonify(books), 200
+
+    except Exception as error:
+        print('[Backend] Error fetching available books:', str(error))
+        return jsonify({
+            'message': 'Database query error',
+            'error': str(error)
+        }), 500
