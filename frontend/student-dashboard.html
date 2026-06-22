@@ -124,7 +124,46 @@
         </main>
     </div>
 
-    <!-- Styles specific to dynamic dashboard animations -->
+    <!-- QR Scanner Modal Overlay -->
+    <div id="scanner-modal" class="modal-overlay">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h3 class="modal-title">
+                    <i class="fa-solid fa-qrcode" style="color: var(--accent-purple); margin-right: 8px;"></i>
+                    Scan Book QR Code
+                </h3>
+                <button type="button" id="close-scanner-header-btn" class="modal-close-icon-btn" aria-label="Close Scanner">
+                    <i class="fa-solid fa-xmark"></i>
+                </button>
+            </div>
+            
+            <div class="modal-body">
+                <p class="modal-description">Align the checkout/pickup QR code on the Kiosk screen within the frame below to scan.</p>
+                
+                <!-- Reader container for live video stream -->
+                <div class="scanner-viewport-wrapper">
+                    <div id="reader"></div>
+                    <!-- Decorative scanning laser indicator -->
+                    <div class="scanner-laser"></div>
+                </div>
+                
+                <!-- Status msg indicator -->
+                <div id="scanner-status" class="scanner-status-message">
+                    <i class="fa-solid fa-spinner fa-spin" style="color: var(--accent-purple);"></i>
+                    <span>Initializing camera stream...</span>
+                </div>
+            </div>
+            
+            <div class="modal-footer">
+                <button type="button" id="close-scanner-btn" class="submit-btn" style="background: linear-gradient(135deg, hsl(346, 84%, 61%), #e11d48); margin-top: 0; max-width: 100%;">
+                    <i class="fa-solid fa-circle-xmark button-icon"></i>
+                    <span>Cancel Scanning</span>
+                </button>
+            </div>
+        </div>
+    </div>
+
+    <!-- Styles specific to dynamic dashboard animations & Modal -->
     <style>
         @keyframes pulseGlowScan {
             0% {
@@ -136,7 +175,175 @@
                 box-shadow: 0 0 15px 4px rgba(109, 40, 217, 0.3);
             }
         }
+
+        /* Modal Overlay Styling */
+        .modal-overlay {
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100vw;
+            height: 100vh;
+            background: rgba(15, 23, 42, 0.4);
+            backdrop-filter: blur(12px);
+            -webkit-backdrop-filter: blur(12px);
+            z-index: 1000;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            opacity: 0;
+            pointer-events: none;
+            transition: opacity 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+        }
+
+        .modal-overlay.active {
+            opacity: 1;
+            pointer-events: auto;
+        }
+
+        /* Modal Content Card */
+        .modal-content {
+            background: var(--card-bg);
+            border: 1px solid var(--card-border);
+            border-radius: var(--border-radius-lg);
+            box-shadow: 0 20px 25px -5px rgba(0, 0, 0, 0.1), 0 10px 10px -5px rgba(0, 0, 0, 0.04);
+            width: 90%;
+            max-width: 450px;
+            padding: 24px;
+            transform: scale(0.9);
+            transition: transform 0.3s cubic-bezier(0.34, 1.56, 0.64, 1);
+        }
+
+        .modal-overlay.active .modal-content {
+            transform: scale(1);
+        }
+
+        /* Header */
+        .modal-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            border-bottom: 1px solid var(--card-border);
+            padding-bottom: 16px;
+            margin-bottom: 16px;
+        }
+
+        .modal-title {
+            font-size: 18px;
+            font-weight: 600;
+            color: var(--text-primary);
+            display: flex;
+            align-items: center;
+        }
+
+        .modal-close-icon-btn {
+            background: none;
+            border: none;
+            color: var(--text-muted);
+            font-size: 20px;
+            cursor: pointer;
+            padding: 4px;
+            border-radius: 50%;
+            width: 32px;
+            height: 32px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            transition: var(--transition-smooth);
+        }
+
+        .modal-close-icon-btn:hover {
+            background: var(--bg-secondary);
+            color: var(--text-primary);
+        }
+
+        /* Body */
+        .modal-body {
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            gap: 16px;
+        }
+
+        .modal-description {
+            font-size: 13px;
+            color: var(--text-muted);
+            text-align: center;
+            line-height: 1.4;
+        }
+
+        /* Scanner Viewport Box */
+        .scanner-viewport-wrapper {
+            width: 100%;
+            aspect-ratio: 1/1;
+            max-width: 280px;
+            border-radius: var(--border-radius-md);
+            overflow: hidden;
+            position: relative;
+            border: 2px solid var(--card-border);
+            background: #000000;
+            box-shadow: inset 0 2px 8px rgba(0, 0, 0, 0.5);
+        }
+
+        /* Make sure html5-qrcode video scales nicely and is fully customized */
+        #reader {
+            width: 100% !important;
+            height: 100% !important;
+            border: none !important;
+        }
+
+        #reader video {
+            width: 100% !important;
+            height: 100% !important;
+            object-fit: cover !important;
+        }
+
+        /* Hide unwanted html5-qrcode elements if any leak through */
+        #reader__dashboard, #reader__header, #reader button {
+            display: none !important;
+        }
+
+        /* Scanner Laser Overlay */
+        .scanner-laser {
+            position: absolute;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 3px;
+            background: linear-gradient(90deg, transparent, var(--accent-purple), transparent);
+            box-shadow: 0 0 8px var(--accent-purple);
+            animation: laserMove 2.5s infinite linear;
+            pointer-events: none;
+            z-index: 10;
+        }
+
+        @keyframes laserMove {
+            0% { top: 0%; }
+            50% { top: 100%; }
+            100% { top: 0%; }
+        }
+
+        /* Status Msg */
+        .scanner-status-message {
+            font-size: 13px;
+            color: var(--text-muted);
+            font-weight: 500;
+            display: flex;
+            align-items: center;
+            gap: 8px;
+        }
+
+        /* Footer */
+        .modal-footer {
+            display: flex;
+            justify-content: center;
+            border-top: 1px solid var(--card-border);
+            padding-top: 16px;
+            margin-top: 16px;
+        }
     </style>
+
+    <!-- html5-qrcode Web Scanning Library CDN -->
+    <script src="https://unpkg.com/html5-qrcode" type="text/javascript"></script>
 
     <!-- Student dashboard controller script -->
     <script src="student-dashboard.js"></script>

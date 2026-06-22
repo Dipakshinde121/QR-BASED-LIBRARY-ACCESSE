@@ -30,10 +30,120 @@ document.addEventListener('DOMContentLoaded', () => {
         window.location.href = 'student-login.html';
     });
 
+    // Modal & Scanner Elements
+    const scannerModal = document.getElementById('scanner-modal');
+    const closeScannerHeaderBtn = document.getElementById('close-scanner-header-btn');
+    const closeScannerBtn = document.getElementById('close-scanner-btn');
+    const scannerStatus = document.getElementById('scanner-status');
+    let html5QrCode = null;
+
     // Handle QR Scan Button Click
     scanQrBtn.addEventListener('click', () => {
-        alert('Initializing Camera Scanner... \n(Scanner camera module implementation will be set up in the next phase!)');
+        // Open Modal
+        scannerModal.classList.add('active');
+        scannerStatus.innerHTML = `<i class="fa-solid fa-spinner fa-spin" style="color: var(--accent-purple);"></i> <span>Requesting camera access...</span>`;
+        
+        // Initialize HTML5 QR Code instance
+        if (!html5QrCode) {
+            html5QrCode = new Html5Qrcode("reader");
+        }
+
+        // Start scanning with environment/back camera if possible, fallback to user/front
+        const config = {
+            fps: 10,
+            qrbox: { width: 220, height: 220 },
+            aspectRatio: 1.0
+        };
+
+        html5QrCode.start(
+            { facingMode: "environment" },
+            config,
+            onScanSuccess,
+            onScanFailure
+        ).then(() => {
+            scannerStatus.innerHTML = `<i class="fa-solid fa-circle-notch fa-spin" style="color: var(--accent-cyan);"></i> <span style="color: var(--accent-cyan); font-weight: 600;">Camera active. Scanning...</span>`;
+        }).catch(err => {
+            console.warn('[Scanner] Back camera fail, trying front:', err);
+            // Fallback to front camera if environment camera is not available
+            html5QrCode.start(
+                { facingMode: "user" },
+                config,
+                onScanSuccess,
+                onScanFailure
+            ).then(() => {
+                scannerStatus.innerHTML = `<i class="fa-solid fa-circle-notch fa-spin" style="color: var(--accent-cyan);"></i> <span style="color: var(--accent-cyan); font-weight: 600;">Front camera active. Scanning...</span>`;
+            }).catch(userErr => {
+                console.error('[Scanner] Both cameras failed:', userErr);
+                scannerStatus.innerHTML = `<i class="fa-solid fa-circle-xmark" style="color: hsl(346, 84%, 61%);"></i> <span style="color: hsl(346, 84%, 61%);">Camera error: ${userErr.message || 'Permission denied'}</span>`;
+            });
+        });
     });
+
+    // Close Scanner functions
+    function stopAndCloseScanner() {
+        if (html5QrCode && html5QrCode.isScanning) {
+            scannerStatus.innerHTML = `<i class="fa-solid fa-spinner fa-spin" style="color: var(--text-muted);"></i> <span>Stopping camera...</span>`;
+            html5QrCode.stop().then(() => {
+                console.log('[Scanner] Camera stream stopped successfully.');
+                scannerModal.classList.remove('active');
+            }).catch(err => {
+                console.error('[Scanner] Error stopping:', err);
+                scannerModal.classList.remove('active');
+            });
+        } else {
+            scannerModal.classList.remove('active');
+        }
+    }
+
+    closeScannerHeaderBtn.addEventListener('click', stopAndCloseScanner);
+    closeScannerBtn.addEventListener('click', stopAndCloseScanner);
+
+    // Callbacks
+    function onScanSuccess(decodedText, decodedResult) {
+        console.log('[Scanner] QR Code detected:', decodedText);
+        
+        // Stop scanning immediately to release camera resources
+        if (html5QrCode && html5QrCode.isScanning) {
+            html5QrCode.stop().then(() => {
+                console.log('[Scanner] Scanner stopped after successful read.');
+                scannerModal.classList.remove('active');
+                
+                // Process and display payload
+                handleDecodedPayload(decodedText);
+            }).catch(err => {
+                console.error('[Scanner] Error stopping after success:', err);
+                scannerModal.classList.remove('active');
+                handleDecodedPayload(decodedText);
+            });
+        } else {
+            scannerModal.classList.remove('active');
+            handleDecodedPayload(decodedText);
+        }
+    }
+
+    function onScanFailure(error) {
+        // Quietly fail as scanning searches every frame, do not spam console
+    }
+
+    function handleDecodedPayload(text) {
+        let displayMessage = text;
+        try {
+            const parsed = JSON.parse(text);
+            if (parsed.book_uid) {
+                const formattedTime = parsed.timestamp ? new Date(parsed.timestamp).toLocaleString() : 'N/A';
+                displayMessage = `📚 Book Decoded Successfully!\n\n` +
+                                 `• Book UID: ${parsed.book_uid}\n` +
+                                 `• Timestamp: ${formattedTime}\n` +
+                                 `• Secure Token: ${parsed.secure_hash ? parsed.secure_hash.substring(0, 16) + '...' : 'N/A'}`;
+            }
+        } catch (e) {
+            // Not a JSON payload, show raw text
+            displayMessage = `🔍 QR Code Decoded Raw Data:\n\n${text}`;
+        }
+        
+        alert(displayMessage);
+    }
+
 
     // Load initial data
     fetchMyBooks();
