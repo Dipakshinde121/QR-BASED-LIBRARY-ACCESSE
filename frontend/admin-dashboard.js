@@ -176,7 +176,7 @@ document.addEventListener('DOMContentLoaded', () => {
                 if (checkouts.length === 0) {
                     checkoutsTableBody.innerHTML = `
                         <tr>
-                            <td colspan="4" style="padding: 45px; text-align: center; color: var(--text-muted);">
+                            <td colspan="5" style="padding: 45px; text-align: center; color: var(--text-muted);">
                                 <i class="fa-solid fa-clock-rotate-left" style="font-size: 24px; margin-bottom: 10px; opacity: 0.5;"></i>
                                 <div>No active checkouts found.</div>
                             </td>
@@ -240,6 +240,11 @@ document.addEventListener('DOMContentLoaded', () => {
                                 <i class="fa-solid ${remainingIcon}"></i> ${remainingText}
                             </span>
                         </td>
+                        <td>
+                            <button type="button" class="submit-btn return-btn" data-id="${checkout.id}" style="width: auto; padding: 6px 12px; font-size: 12px; margin: 0; background: linear-gradient(135deg, var(--accent-cyan), #0891b2); height: auto; line-height: normal; box-shadow: 0 2px 6px rgba(8, 145, 178, 0.2);">
+                                <i class="fa-solid fa-arrow-rotate-left" style="margin-right: 4px;"></i> Mark as Returned
+                            </button>
+                        </td>
                     `;
                     checkoutsTableBody.appendChild(row);
                 });
@@ -249,7 +254,7 @@ document.addEventListener('DOMContentLoaded', () => {
                 checkoutsCount.textContent = 'Connection Error';
                 checkoutsTableBody.innerHTML = `
                     <tr>
-                        <td colspan="4" style="padding: 45px; text-align: center; color: hsl(346, 84%, 61%);">
+                        <td colspan="5" style="padding: 45px; text-align: center; color: hsl(346, 84%, 61%);">
                             <i class="fa-solid fa-circle-exclamation" style="font-size: 24px; margin-bottom: 10px;"></i>
                             <div>Failed to load checkouts. Connect your backend server.</div>
                             <div style="font-size: 12px; margin-top: 5px; opacity: 0.8;">Error: ${error.message}</div>
@@ -257,5 +262,93 @@ document.addEventListener('DOMContentLoaded', () => {
                     </tr>
                 `;
             });
+    }
+
+    // Set up event delegation on active checkouts table for returning books
+    checkoutsTableBody.addEventListener('click', (e) => {
+        const returnBtn = e.target.closest('.return-btn');
+        if (returnBtn) {
+            const transactionId = returnBtn.getAttribute('data-id');
+            handleBookReturn(transactionId);
+        }
+    });
+
+    // Handle book return request
+    function handleBookReturn(transactionId) {
+        if (!confirm("Confirm book return?")) {
+            return;
+        }
+
+        const apiEndpoint = 'http://localhost:5000/api/admin/return-book';
+        const payload = {
+            transaction_id: transactionId
+        };
+
+        fetch(apiEndpoint, {
+            method: 'POST',
+            headers: {
+                'Content-Type': 'application/json'
+            },
+            body: JSON.stringify(payload)
+        })
+        .then(response => {
+            if (!response.ok) {
+                return response.json().then(errData => {
+                    throw new Error(errData.message || 'Failed to process book return.');
+                }).catch(() => {
+                    throw new Error('Failed to process book return.');
+                });
+            }
+            return response.json();
+        })
+        .then(data => {
+            console.log('[Admin Dashboard] Book return successful:', data);
+            showToast('Book successfully returned.', 'success');
+            fetchActiveCheckouts();
+            fetchInventory();
+        })
+        .catch(error => {
+            console.error('[Admin Dashboard] Return error:', error);
+            showToast(error.message || 'Connection error during return.', 'error');
+        });
+    }
+
+    // Toast notification utility for Admin Dashboard
+    function showToast(message, type = 'success') {
+        let container = document.getElementById('toast-container');
+        if (!container) {
+            container = document.createElement('div');
+            container.id = 'toast-container';
+            container.className = 'toast-container';
+            document.body.appendChild(container);
+        }
+
+        const toast = document.createElement('div');
+        toast.className = `toast toast-${type}`;
+        
+        const icon = type === 'success' 
+            ? '<i class="fa-solid fa-circle-check" style="color: #10b981; font-size: 18px;"></i>' 
+            : '<i class="fa-solid fa-circle-xmark" style="color: #ef4444; font-size: 18px;"></i>';
+
+        toast.innerHTML = `
+            ${icon}
+            <span class="toast-message">${message}</span>
+        `;
+
+        container.appendChild(toast);
+
+        // Show transition
+        setTimeout(() => {
+            toast.classList.add('toast-show');
+        }, 50);
+
+        // Auto remove
+        setTimeout(() => {
+            toast.classList.remove('toast-show');
+            toast.classList.add('toast-hide');
+            setTimeout(() => {
+                toast.remove();
+            }, 300);
+        }, 4000);
     }
 });

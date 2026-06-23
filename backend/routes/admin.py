@@ -130,3 +130,88 @@ def get_active_checkouts():
             'message': 'Database query error.',
             'error': str(error)
         }), 500
+
+
+@admin_bp.route('/return-book', methods=['POST'])
+def return_book():
+    """
+    POST /api/admin/return-book
+    Processes book return for a checkout transaction.
+    Body: { transaction_id, book_id } (either transaction_id or book_id)
+    """
+    data = request.get_json() or {}
+    transaction_id = data.get('transaction_id')
+    book_id = data.get('book_id')
+
+    if not transaction_id and not book_id:
+        return jsonify({'message': 'Either transaction_id or book_id is required.'}), 400
+
+    db_conn = get_db()
+    try:
+        transaction = None
+        # 1. Resolve transaction
+        with db_conn.cursor() as cursor:
+            if transaction_id:
+                # Resolve by transaction_id
+                sql = 'SELECT id, book_id, status FROM transactions WHERE id = %s'
+                cursor.execute(sql, (transaction_id,))
+                transaction = cursor.fetchone()
+            elif book_id:
+                # Resolve by book_id (integer id or book_uid)
+                # First resolve book
+                sql_book = 'SELECT id FROM books WHERE id = %s OR book_uid = %s'
+                cursor.execute(sql_book, (book_id, book_id))
+                book = cursor.fetchone()
+                if book:
+                    # Find active checkout transaction for this book
+                    sql_tx = "SELECT id, book_id, status FROM transactions WHERE book_id = %s AND status != 'returned' AND return_time IS NULL LIMIT 1"
+                    cursor.execute(sql_tx, (book['id'],))
+                    transaction = cursor.fetchone()
+
+        if not transaction:
+            return jsonify({'message': 'Active transaction not found.'}), 404
+
+        if transaction['status'] == 'returned':
+            return jsonify({'message': 'This transaction is already marked as returned.'}), 400
+
+        # 2. Database update transaction logic
+        with db_conn.cursor() as cursor:
+            # Query 1: Update transactions status and return_time
+            sql_update_tx = """
+                UPDATE transactions 
+                SET status = 'returned', return_time = CURRENT_TIMESTAMP 
+                WHERE id = %s
+            """
+            cursor.execute(sql_update_tx, (transaction['id'],))
+
+            # Query 2: Update books status back to available
+            sql_update_book = """
+                UPDATE books 
+                SET status = 'available' 
+                WHERE id = %s
+            """
+            cursor.execute(sql_update_book, (transaction['book_id'],))
+
+        # Commit transaction changes to database
+        db_conn.commit()
+        print(f"[Backend Admin] Book return transaction ID {transaction['id']} processed successfully.")
+
+        return jsonify({
+            'message': 'Book successfully returned.',
+            'transaction_id': transaction['id'],
+            'book_id': transaction['book_id']
+        }), 200
+
+    except Exception as error:
+        # Rollback on database transaction failures
+        print('[Backend Admin] Error during return-book transaction. Rolling back...', str(error))
+        try:
+            db_conn.rollback()
+        except Exception as rollback_err:
+            print('[Backend Admin] Rollback failed:', str(rollback_err))
+
+        return jsonify({
+            'message': 'Database return transaction failed.',
+            'error': str(error)
+        }), 500
+
