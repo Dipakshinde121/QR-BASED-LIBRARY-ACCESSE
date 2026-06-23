@@ -125,24 +125,105 @@ document.addEventListener('DOMContentLoaded', () => {
         // Quietly fail as scanning searches every frame, do not spam console
     }
 
+    // Toast notification utility
+    function showToast(message, type = 'success') {
+        let container = document.getElementById('toast-container');
+        if (!container) {
+            container = document.createElement('div');
+            container.id = 'toast-container';
+            container.className = 'toast-container';
+            document.body.appendChild(container);
+        }
+
+        const toast = document.createElement('div');
+        toast.className = `toast toast-${type}`;
+        
+        const icon = type === 'success' 
+            ? '<i class="fa-solid fa-circle-check" style="color: #10b981; font-size: 18px;"></i>' 
+            : '<i class="fa-solid fa-circle-xmark" style="color: #ef4444; font-size: 18px;"></i>';
+
+        toast.innerHTML = `
+            ${icon}
+            <span class="toast-message">${message}</span>
+        `;
+
+        container.appendChild(toast);
+
+        // Show transition
+        setTimeout(() => {
+            toast.classList.add('toast-show');
+        }, 50);
+
+        // Auto remove
+        setTimeout(() => {
+            toast.classList.remove('toast-show');
+            toast.classList.add('toast-hide');
+            setTimeout(() => {
+                toast.remove();
+            }, 300);
+        }, 4000);
+    }
+
     function handleDecodedPayload(text) {
-        let displayMessage = text;
+        console.log('[Scanner] Processing decoded payload...');
+        let bookUid = null;
+        
+        // 1. Try parsing JSON safely
         try {
             const parsed = JSON.parse(text);
-            if (parsed.book_uid) {
-                const formattedTime = parsed.timestamp ? new Date(parsed.timestamp).toLocaleString() : 'N/A';
-                displayMessage = `📚 Book Decoded Successfully!\n\n` +
-                                 `• Book UID: ${parsed.book_uid}\n` +
-                                 `• Timestamp: ${formattedTime}\n` +
-                                 `• Secure Token: ${parsed.secure_hash ? parsed.secure_hash.substring(0, 16) + '...' : 'N/A'}`;
+            bookUid = parsed.book_uid;
+            if (!bookUid) {
+                throw new Error('Missing book_uid field');
             }
         } catch (e) {
-            // Not a JSON payload, show raw text
-            displayMessage = `🔍 QR Code Decoded Raw Data:\n\n${text}`;
+            console.error('[Scanner] Failed to parse QR payload:', e);
+            showToast('Invalid Library QR Code.', 'error');
+            return;
         }
-        
-        alert(displayMessage);
+
+        // 2. Perform Checkout fetch POST
+        const checkoutEndpoint = 'http://localhost:5000/api/student/checkout';
+        const requestPayload = {
+            user_id: studentUser.id,
+            book_id: bookUid
+        };
+
+        console.log('[Scanner] Sending checkout request for book:', bookUid);
+
+        fetch(checkoutEndpoint, {
+            method: 'POST',
+            headers: {
+                'Content-Type': 'application/json'
+            },
+            body: JSON.stringify(requestPayload)
+        })
+        .then(response => {
+            if (!response.ok) {
+                // Read the error message from response if possible
+                return response.json().then(errData => {
+                    throw new Error(errData.message || 'Checkout request failed.');
+                }).catch(() => {
+                    throw new Error('Checkout request failed.');
+                });
+            }
+            return response.json();
+        })
+        .then(data => {
+            console.log('[Scanner] Checkout successful:', data);
+            
+            // Show premium success notification
+            showToast('Book Successfully Checked Out!', 'success');
+            
+            // Refresh dashboard lists immediately
+            fetchMyBooks();
+            fetchAvailableBooks();
+        })
+        .catch(error => {
+            console.error('[Scanner] Checkout error:', error);
+            showToast(error.message || 'Failed to connect to checkout server.', 'error');
+        });
     }
+
 
 
     // Load initial data

@@ -106,3 +106,90 @@ def get_student_active_checkouts(student_id):
             'message': 'Database query error.',
             'error': str(error)
         }), 500
+
+
+@student_bp.route('/checkout', methods=['POST'])
+def student_checkout():
+    """
+    POST /api/student/checkout
+    Processes book checkout scan for a student.
+    Body: { user_id, book_id }
+    """
+    data = request.get_json() or {}
+    user_id = data.get('user_id')
+    book_id = data.get('book_id')
+
+    if not user_id or not book_id:
+        return jsonify({'message': 'Both user_id and book_id are required.'}), 400
+
+    db_conn = get_db()
+    try:
+        # 1. Resolve book and check status
+        # Since book_id might be the database id or the string book_uid from the QR, we handle both.
+        with db_conn.cursor() as cursor:
+            # Query the book details
+            sql_book = 'SELECT id, book_uid, title, status FROM books WHERE book_uid = %s OR id = %s'
+            cursor.execute(sql_book, (book_id, book_id))
+            book = cursor.fetchone()
+
+        if not book:
+            return jsonify({'message': 'Book not found in database.'}), 404
+
+        # Check if status is already checked out or maintenance
+        if book['status'] == 'checked_out':
+            return jsonify({'message': 'This book is already checked out.'}), 400
+        elif book['status'] == 'maintenance':
+            return jsonify({'message': 'This book is undergoing maintenance and cannot be checked out.'}), 400
+
+        # 2. Check if student exists
+        with db_conn.cursor() as cursor:
+            sql_user = 'SELECT id, name, role FROM users WHERE id = %s'
+            cursor.execute(sql_user, (user_id,))
+            user = cursor.fetchone()
+
+        if not user:
+            return jsonify({'message': 'Student user not found.'}), 404
+
+        if user['role'] != 'student':
+            return jsonify({'message': 'Access denied. Only students can check out books.'}), 403
+
+        # 3. Perform database transaction logic safely
+        with db_conn.cursor() as cursor:
+            # Query 1: Insert transaction record
+            # due_time: current timestamp + 14 days
+            sql_insert_tx = """
+                INSERT INTO transactions (user_id, book_id, checkout_time, due_time, status)
+                VALUES (%s, %s, CURRENT_TIMESTAMP, DATE_ADD(CURRENT_TIMESTAMP, INTERVAL 14 DAY), 'active')
+            """
+            cursor.execute(sql_insert_tx, (user_id, book['id']))
+
+            # Query 2: Update book status
+            sql_update_book = 'UPDATE books SET status = %s WHERE id = %s'
+            cursor.execute(sql_update_book, ('checked_out', book['id']))
+
+        # Commit transaction changes to the database
+        db_conn.commit()
+        print(f"[Backend Student] Book '{book['title']}' (UID: {book['book_uid']}) successfully checked out by {user['name']}.")
+
+        return jsonify({
+            'message': 'Book Successfully Checked Out!',
+            'book': {
+                'id': book['id'],
+                'book_uid': book['book_uid'],
+                'title': book['title']
+            }
+        }), 200
+
+    except Exception as error:
+        # Transaction rollback to prevent orphaned transactions
+        print('[Backend Student] Error during checkout transaction. Rolling back...', str(error))
+        try:
+            db_conn.rollback()
+        except Exception as rollback_err:
+            print('[Backend Student] Rollback failed:', str(rollback_err))
+        
+        return jsonify({
+            'message': 'Database checkout transaction failed.',
+            'error': str(error)
+        }), 500
+
