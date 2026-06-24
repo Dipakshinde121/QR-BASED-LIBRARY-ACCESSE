@@ -19,13 +19,23 @@ document.addEventListener('DOMContentLoaded', () => {
     const tabInventory = document.getElementById('tab-inventory');
     const tabCheckouts = document.getElementById('tab-checkouts');
     const tabFines = document.getElementById('tab-fines');
+    const tabAnalytics = document.getElementById('tab-analytics');
     const sectionInventory = document.getElementById('section-inventory');
     const sectionCheckouts = document.getElementById('section-checkouts');
     const sectionFines = document.getElementById('section-fines');
+    const sectionAnalytics = document.getElementById('section-analytics');
     const checkoutsTableBody = document.getElementById('checkouts-table-body');
     const checkoutsCount = document.getElementById('checkouts-count');
     const finesTableBody = document.getElementById('fines-table-body');
     const finesCount = document.getElementById('fines-count');
+    const statStudents = document.getElementById('stat-students');
+    const statActive = document.getElementById('stat-active');
+    const statUnpaid = document.getElementById('stat-unpaid');
+    const statPaid = document.getElementById('stat-paid');
+
+    // Chart instances references to prevent reuse errors
+    let mostBorrowedChartInstance = null;
+    let hourlyCheckoutsChartInstance = null;
 
     // Update Welcome Title
     adminWelcome.textContent = `Welcome, ${adminUser.name}`;
@@ -52,11 +62,18 @@ document.addEventListener('DOMContentLoaded', () => {
         });
     }
 
+    if (tabAnalytics) {
+        tabAnalytics.addEventListener('click', () => {
+            switchTab('analytics');
+        });
+    }
+
     function switchTab(tabName) {
         // Reset tab active classes and styles
         tabInventory.classList.remove('active');
         tabCheckouts.classList.remove('active');
         if (tabFines) tabFines.classList.remove('active');
+        if (tabAnalytics) tabAnalytics.classList.remove('active');
         
         tabInventory.style.color = 'var(--text-muted)';
         tabInventory.style.borderBottom = '3px solid transparent';
@@ -66,11 +83,16 @@ document.addEventListener('DOMContentLoaded', () => {
             tabFines.style.color = 'var(--text-muted)';
             tabFines.style.borderBottom = '3px solid transparent';
         }
+        if (tabAnalytics) {
+            tabAnalytics.style.color = 'var(--text-muted)';
+            tabAnalytics.style.borderBottom = '3px solid transparent';
+        }
 
         // Hide all sections
         sectionInventory.style.display = 'none';
         sectionCheckouts.style.display = 'none';
         if (sectionFines) sectionFines.style.display = 'none';
+        if (sectionAnalytics) sectionAnalytics.style.display = 'none';
 
         if (tabName === 'inventory') {
             tabInventory.classList.add('active');
@@ -92,6 +114,14 @@ document.addEventListener('DOMContentLoaded', () => {
             }
             if (sectionFines) sectionFines.style.display = 'block';
             fetchFines();
+        } else if (tabName === 'analytics') {
+            if (tabAnalytics) {
+                tabAnalytics.classList.add('active');
+                tabAnalytics.style.color = 'var(--text-primary)';
+                tabAnalytics.style.borderBottom = '3px solid var(--accent-cyan)';
+            }
+            if (sectionAnalytics) sectionAnalytics.style.display = 'block';
+            fetchAnalytics();
         }
     }
 
@@ -565,6 +595,240 @@ document.addEventListener('DOMContentLoaded', () => {
         .catch(error => {
             console.error('[Admin Dashboard] Fine payment collection error:', error);
             showToast(error.message || 'Error collecting fine payment.', 'error');
+        });
+    }
+
+    /**
+     * Fetches dynamic analytics stats from backend and renders visual metrics using Chart.js
+     */
+    function fetchAnalytics() {
+        const apiEndpoint = `${CONFIG.API_BASE_URL}/api/admin/statistics`;
+
+        fetch(apiEndpoint, {
+            headers: {
+                'Authorization': `Bearer ${adminToken}`
+            }
+        })
+        .then(response => {
+            if (response.status === 401) {
+                localStorage.removeItem('adminUser');
+                localStorage.removeItem('adminToken');
+                window.location.href = 'admin-login.html';
+                throw new Error('Unauthorized');
+            }
+            if (!response.ok) {
+                throw new Error('Failed to fetch analytics statistics.');
+            }
+            return response.json();
+        })
+        .then(data => {
+            console.log('[Admin Dashboard] Analytics statistics loaded:', data);
+
+            // Update Summary Stats Cards
+            if (statStudents) statStudents.textContent = data.summary.total_students;
+            if (statActive) statActive.textContent = data.summary.active_checkouts;
+            if (statUnpaid) statUnpaid.textContent = `$${data.summary.total_fines_unpaid.toFixed(2)}`;
+            if (statPaid) statPaid.textContent = `$${data.summary.total_fines_paid.toFixed(2)}`;
+
+            // Render Charts
+            renderMostBorrowedChart(data.most_borrowed);
+            renderHourlyCheckoutsChart(data.hourly_checkouts);
+        })
+        .catch(error => {
+            console.error('[Admin Dashboard] Analytics fetch error:', error);
+            showToast(error.message || 'Failed to load analytics.', 'error');
+        });
+    }
+
+    function renderMostBorrowedChart(mostBorrowed) {
+        const ctx = document.getElementById('mostBorrowedChart');
+        if (!ctx) return;
+
+        // Destroy previous instance to prevent visual glitching
+        if (mostBorrowedChartInstance) {
+            mostBorrowedChartInstance.destroy();
+        }
+
+        const labels = mostBorrowed.map(item => item.title);
+        const dataValues = mostBorrowed.map(item => item.count);
+
+        // Gradient styling
+        const canvasCtx = ctx.getContext('2d');
+        const gradient = canvasCtx.createLinearGradient(0, 0, canvasCtx.canvas.width, 0);
+        gradient.addColorStop(0, 'rgba(167, 139, 250, 0.85)'); // Violet 400
+        gradient.addColorStop(1, 'rgba(139, 92, 246, 0.4)');   // Violet 600
+
+        mostBorrowedChartInstance = new Chart(ctx, {
+            type: 'bar',
+            data: {
+                labels: labels,
+                datasets: [{
+                    label: 'Checkouts count',
+                    data: dataValues,
+                    backgroundColor: gradient,
+                    borderColor: '#a78bfa',
+                    borderWidth: 1.5,
+                    borderRadius: 4,
+                    barThickness: 16
+                }]
+            },
+            options: {
+                indexAxis: 'y',
+                responsive: true,
+                maintainAspectRatio: false,
+                plugins: {
+                    legend: {
+                        display: false
+                    },
+                    tooltip: {
+                        backgroundColor: '#18181b',
+                        titleColor: '#f4f4f5',
+                        bodyColor: '#a1a1aa',
+                        borderColor: '#27272a',
+                        borderWidth: 1,
+                        padding: 10,
+                        displayColors: false,
+                        callbacks: {
+                            label: function(context) {
+                                return `Borrowed: ${context.parsed.x} times`;
+                            }
+                        }
+                    }
+                },
+                scales: {
+                    x: {
+                        grid: {
+                            color: 'rgba(39, 39, 42, 0.4)',
+                            drawBorder: false
+                        },
+                        ticks: {
+                            color: '#a1a1aa',
+                            font: {
+                                family: 'Outfit',
+                                size: 11
+                            },
+                            stepSize: 1,
+                            beginAtZero: true
+                        }
+                    },
+                    y: {
+                        grid: {
+                            display: false
+                        },
+                        ticks: {
+                            color: '#f4f4f5',
+                            font: {
+                                family: 'Outfit',
+                                size: 11,
+                                weight: '500'
+                            },
+                            callback: function(value) {
+                                // Shorten long book titles in Y-axis
+                                const title = this.getLabelForValue(value);
+                                return title.length > 22 ? title.substring(0, 20) + '...' : title;
+                            }
+                        }
+                    }
+                }
+            }
+        });
+    }
+
+    function renderHourlyCheckoutsChart(hourlyCheckouts) {
+        const ctx = document.getElementById('hourlyCheckoutsChart');
+        if (!ctx) return;
+
+        // Destroy previous instance
+        if (hourlyCheckoutsChartInstance) {
+            hourlyCheckoutsChartInstance.destroy();
+        }
+
+        // Sort hour keys (00, 01, ..., 23)
+        const sortedHours = Object.keys(hourlyCheckouts).sort();
+        const labels = sortedHours.map(hour => `${hour}:00`);
+        const dataValues = sortedHours.map(hour => hourlyCheckouts[hour]);
+
+        // Gradient fill styling
+        const canvasCtx = ctx.getContext('2d');
+        const fillGradient = canvasCtx.createLinearGradient(0, 0, 0, 260);
+        fillGradient.addColorStop(0, 'rgba(34, 211, 238, 0.3)');  // Cyan 400 semi-transparent
+        fillGradient.addColorStop(1, 'rgba(34, 211, 238, 0.0)');  // Fade out completely
+
+        hourlyCheckoutsChartInstance = new Chart(ctx, {
+            type: 'line',
+            data: {
+                labels: labels,
+                datasets: [{
+                    label: 'Checkouts',
+                    data: dataValues,
+                    borderColor: '#22d3ee', // Cyan 400
+                    borderWidth: 2,
+                    pointBackgroundColor: '#22d3ee',
+                    pointBorderColor: '#18181b',
+                    pointBorderWidth: 1.5,
+                    pointHoverRadius: 6,
+                    pointRadius: 4,
+                    fill: true,
+                    backgroundColor: fillGradient,
+                    tension: 0.4
+                }]
+            },
+            options: {
+                responsive: true,
+                maintainAspectRatio: false,
+                plugins: {
+                    legend: {
+                        display: false
+                    },
+                    tooltip: {
+                        backgroundColor: '#18181b',
+                        titleColor: '#f4f4f5',
+                        bodyColor: '#a1a1aa',
+                        borderColor: '#27272a',
+                        borderWidth: 1,
+                        padding: 10,
+                        displayColors: false,
+                        callbacks: {
+                            label: function(context) {
+                                return `Checkouts: ${context.parsed.y}`;
+                            }
+                        }
+                    }
+                },
+                scales: {
+                    x: {
+                        grid: {
+                            display: false
+                        },
+                        ticks: {
+                            color: '#a1a1aa',
+                            font: {
+                                family: 'Outfit',
+                                size: 10
+                            },
+                            // Only show every 2 hours to avoid crowding
+                            callback: function(val, index) {
+                                return index % 2 === 0 ? this.getLabelForValue(val) : '';
+                            }
+                        }
+                    },
+                    y: {
+                        grid: {
+                            color: 'rgba(39, 39, 42, 0.4)',
+                            drawBorder: false
+                        },
+                        ticks: {
+                            color: '#a1a1aa',
+                            font: {
+                                family: 'Outfit',
+                                size: 11
+                            },
+                            stepSize: 1,
+                            beginAtZero: true
+                        }
+                    }
+                }
+            }
         });
     }
 });

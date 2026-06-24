@@ -50,6 +50,9 @@
                 <button type="button" id="tab-fines" class="tab-btn" style="background: none; border: none; font-size: 14px; font-weight: 600; padding: 8px 16px; cursor: pointer; color: var(--text-muted); border-bottom: 3px solid transparent; transition: var(--transition-smooth); margin-bottom: -15px;">
                     <i class="fa-solid fa-hand-holding-dollar" style="margin-right: 6px;"></i>Fines Management
                 </button>
+                <button type="button" id="tab-analytics" class="tab-btn" style="background: none; border: none; font-size: 14px; font-weight: 600; padding: 8px 16px; cursor: pointer; color: var(--text-muted); border-bottom: 3px solid transparent; transition: var(--transition-smooth); margin-bottom: -15px;">
+                    <i class="fa-solid fa-chart-pie" style="margin-right: 6px;"></i>Visual Analytics
+                </button>
             </nav>
 
             <!-- Section 1: Complete Book Inventory -->
@@ -150,9 +153,64 @@
                     </table>
                 </div>
             </section>
+
+            <!-- Section 4: Analytics -->
+            <section id="section-analytics" class="dashboard-section" style="display: none;">
+                <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 20px; flex-wrap: wrap; gap: 10px;">
+                    <h2 style="font-size: 16px; font-weight: 600; color: var(--text-primary);">
+                        Library Statistics & Insights
+                    </h2>
+                </div>
+
+                <!-- Summary Stats Grid -->
+                <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(180px, 1fr)); gap: 20px; margin-bottom: 30px;">
+                    <!-- Stat Card 1 -->
+                    <div class="table-container" style="padding: 20px; text-align: center; border: 1.5px solid var(--card-border); background: var(--card-bg);">
+                        <i class="fa-solid fa-users" style="color: var(--accent-purple); font-size: 24px; margin-bottom: 8px;"></i>
+                        <div style="font-size: 28px; font-weight: 700; color: var(--text-primary);" id="stat-students">0</div>
+                        <div style="font-size: 12px; color: var(--text-muted); text-transform: uppercase; margin-top: 4px; font-weight: 600; letter-spacing: 0.5px;">Students</div>
+                    </div>
+                    <!-- Stat Card 2 -->
+                    <div class="table-container" style="padding: 20px; text-align: center; border: 1.5px solid var(--card-border); background: var(--card-bg);">
+                        <i class="fa-solid fa-book-bookmark" style="color: var(--accent-cyan); font-size: 24px; margin-bottom: 8px;"></i>
+                        <div style="font-size: 28px; font-weight: 700; color: var(--text-primary);" id="stat-active">0</div>
+                        <div style="font-size: 12px; color: var(--text-muted); text-transform: uppercase; margin-top: 4px; font-weight: 600; letter-spacing: 0.5px;">Active Loans</div>
+                    </div>
+                    <!-- Stat Card 3 -->
+                    <div class="table-container" style="padding: 20px; text-align: center; border: 1.5px solid var(--card-border); background: var(--card-bg);">
+                        <i class="fa-solid fa-sack-xmark" style="color: #ef4444; font-size: 24px; margin-bottom: 8px;"></i>
+                        <div style="font-size: 28px; font-weight: 700; color: #ef4444;" id="stat-unpaid">$0.00</div>
+                        <div style="font-size: 12px; color: var(--text-muted); text-transform: uppercase; margin-top: 4px; font-weight: 600; letter-spacing: 0.5px;">Unpaid Fines</div>
+                    </div>
+                    <!-- Stat Card 4 -->
+                    <div class="table-container" style="padding: 20px; text-align: center; border: 1.5px solid var(--card-border); background: var(--card-bg);">
+                        <i class="fa-solid fa-circle-dollar-to-slot" style="color: #10b981; font-size: 24px; margin-bottom: 8px;"></i>
+                        <div style="font-size: 28px; font-weight: 700; color: #10b981;" id="stat-paid">$0.00</div>
+                        <div style="font-size: 12px; color: var(--text-muted); text-transform: uppercase; margin-top: 4px; font-weight: 600; letter-spacing: 0.5px;">Collected Fines</div>
+                    </div>
+                </div>
+
+                <!-- Charts Display Row -->
+                <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(350px, 1fr)); gap: 30px; margin-top: 20px;">
+                    <div class="table-container" style="padding: 20px; background: var(--card-bg); border: 1.5px solid var(--card-border); border-radius: var(--border-radius-md); display: flex; flex-direction: column;">
+                        <h3 style="font-size: 14px; font-weight: 600; margin-bottom: 20px; color: var(--text-primary); text-align: center;">Most Borrowed Books</h3>
+                        <div style="position: relative; width: 100%; height: 260px;">
+                            <canvas id="mostBorrowedChart"></canvas>
+                        </div>
+                    </div>
+                    <div class="table-container" style="padding: 20px; background: var(--card-bg); border: 1.5px solid var(--card-border); border-radius: var(--border-radius-md); display: flex; flex-direction: column;">
+                        <h3 style="font-size: 14px; font-weight: 600; margin-bottom: 20px; color: var(--text-primary); text-align: center;">Peak Checkout Hours</h3>
+                        <div style="position: relative; width: 100%; height: 260px;">
+                            <canvas id="hourlyCheckoutsChart"></canvas>
+                        </div>
+                    </div>
+                </div>
+            </section>
         </main>
     </div>
 
+    <!-- Include Chart.js CDN -->
+    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
     <!-- Script to handle session protection and inventory loading -->
     <script src="config.js"></script>
     <script src="admin-dashboard.js"></script>

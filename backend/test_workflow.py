@@ -322,6 +322,32 @@ class TestLibraryWorkflow(unittest.TestCase):
         self.assertIn('Book Successfully Checked Out', checkout_success['message'])
         print(f"[PASS] Workflow E: Book checked out successfully after paying fines.")
 
+        # ----------------------------------------------------
+        # 6. Workflow F: Visual Analytics Statistics
+        # ----------------------------------------------------
+        # Call GET /api/admin/statistics authenticated as admin
+        response = self.client.get('/api/admin/statistics',
+                                   headers={'Authorization': f'Bearer {admin_token}'})
+        self.assertEqual(response.status_code, 200)
+        stats_data = json.loads(response.data)
+        
+        # Verify the schema of stats_data
+        self.assertIn('summary', stats_data)
+        self.assertIn('most_borrowed', stats_data)
+        self.assertIn('hourly_checkouts', stats_data)
+        
+        summary = stats_data['summary']
+        self.assertIn('total_students', summary)
+        self.assertIn('total_books', summary)
+        self.assertIn('active_checkouts', summary)
+        self.assertIn('total_fines_unpaid', summary)
+        self.assertIn('total_fines_paid', summary)
+        
+        # Verify types
+        self.assertIsInstance(stats_data['most_borrowed'], list)
+        self.assertIsInstance(stats_data['hourly_checkouts'], dict)
+        print("[PASS] Workflow F: Visual Analytics statistics retrieved and schema validated.")
+
         print("--- Automated Library Workflow Test Completed Successfully ---\n")
 
 if __name__ == '__main__':

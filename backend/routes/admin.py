@@ -362,3 +362,105 @@ def pay_fine():
         print('[Backend Admin] Error marking fine as paid:', str(error))
         return jsonify({'message': 'Database error.', 'error': str(error)}), 500
 
+
+@admin_bp.route('/statistics', methods=['GET'])
+@token_required(role='admin')
+def get_library_statistics():
+    """
+    GET /api/admin/statistics
+    Calculates dynamic library stats (Active Loans, Unpaid/Paid Fines, Peak Hours, Most Borrowed Books)
+    """
+    db_conn = get_db()
+    try:
+        stats = {
+            'summary': {
+                'total_students': 0,
+                'total_books': 0,
+                'active_checkouts': 0,
+                'total_fines_unpaid': 0.0,
+                'total_fines_paid': 0.0
+            },
+            'most_borrowed': [],
+            'hourly_checkouts': {}
+        }
+        
+        with db_conn.cursor() as cursor:
+            # 1. Total Students
+            cursor.execute("SELECT COUNT(*) as count FROM users WHERE role = 'student'")
+            row = cursor.fetchone()
+            stats['summary']['total_students'] = row['count'] if isinstance(row, dict) else row[0]
+            
+            # 2. Total Books
+            cursor.execute("SELECT COUNT(*) as count FROM books")
+            row = cursor.fetchone()
+            stats['summary']['total_books'] = row['count'] if isinstance(row, dict) else row[0]
+            
+            # 3. Active Checkouts
+            cursor.execute("SELECT COUNT(*) as count FROM transactions WHERE status = 'active'")
+            row = cursor.fetchone()
+            stats['summary']['active_checkouts'] = row['count'] if isinstance(row, dict) else row[0]
+            
+            # 4. Unpaid Fines Sum
+            cursor.execute("SELECT SUM(fine_amount) as total FROM fines WHERE status = 'unpaid'")
+            row = cursor.fetchone()
+            val = row['total'] if isinstance(row, dict) else row[0]
+            stats['summary']['total_fines_unpaid'] = float(val) if val is not None else 0.0
+            
+            # 5. Paid Fines Sum
+            cursor.execute("SELECT SUM(fine_amount) as total FROM fines WHERE status = 'paid'")
+            row = cursor.fetchone()
+            val = row['total'] if isinstance(row, dict) else row[0]
+            stats['summary']['total_fines_paid'] = float(val) if val is not None else 0.0
+            
+            # 6. Most Borrowed Books (Top 5)
+            sql_most_borrowed = """
+                SELECT b.title, COUNT(t.id) as borrow_count
+                FROM transactions t
+                JOIN books b ON t.book_id = b.id
+                GROUP BY t.book_id, b.title
+                ORDER BY borrow_count DESC
+                LIMIT 5
+            """
+            cursor.execute(sql_most_borrowed)
+            rows = cursor.fetchall()
+            stats['most_borrowed'] = [
+                {'title': r['title'], 'count': r['borrow_count']}
+                for r in rows
+            ]
+            
+            # 7. Peak Checkout Hours
+            cursor.execute("SELECT checkout_time FROM transactions")
+            tx_times = cursor.fetchall()
+            
+        hourly_counts = {f"{h:02d}": 0 for h in range(24)}
+        for tx in tx_times:
+            raw_time = tx['checkout_time']
+            if isinstance(raw_time, str):
+                try:
+                    if '.' in raw_time:
+                        dt = datetime.datetime.strptime(raw_time, "%Y-%m-%d %H:%M:%S.%f")
+                    else:
+                        dt = datetime.datetime.strptime(raw_time, "%Y-%m-%d %H:%M:%S")
+                    hour_str = f"{dt.hour:02d}"
+                except Exception:
+                    try:
+                        dt = datetime.datetime.fromisoformat(raw_time.replace('Z', '+00:00'))
+                        hour_str = f"{dt.hour:02d}"
+                    except Exception:
+                        hour_str = "00"
+            elif isinstance(raw_time, (datetime.date, datetime.datetime)):
+                hour_str = f"{raw_time.hour:02d}"
+            else:
+                hour_str = "00"
+                
+            if hour_str in hourly_counts:
+                hourly_counts[hour_str] += 1
+                
+        stats['hourly_checkouts'] = hourly_counts
+        
+        return jsonify(stats), 200
+        
+    except Exception as error:
+        print("[Backend Admin] Error generating statistics:", str(error))
+        return jsonify({'message': 'Database error.', 'error': str(error)}), 500
+
