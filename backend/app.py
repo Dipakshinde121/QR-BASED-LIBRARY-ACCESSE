@@ -52,4 +52,4 @@ def root_route():
 if __name__ == '__main__':
     print(f'Server is running on port {PORT}')
     # Turn off debug mode reloader to avoid initial database connection log duplication
-    socketio.run(app, host='0.0.0.0', port=PORT, debug=False)
+    socketio.run(app, host='0.0.0.0', port=PORT, debug=False, allow_unsafe_werkzeug=True)
