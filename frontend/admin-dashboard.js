@@ -20,6 +20,7 @@ document.addEventListener('DOMContentLoaded', () => {
     const tabCheckouts = document.getElementById('tab-checkouts');
     const tabFines = document.getElementById('tab-fines');
     const tabAnalytics = document.getElementById('tab-analytics');
+    const downloadReportBtn = document.getElementById('download-report-btn');
     const sectionInventory = document.getElementById('section-inventory');
     const sectionCheckouts = document.getElementById('section-checkouts');
     const sectionFines = document.getElementById('section-fines');
@@ -46,6 +47,56 @@ document.addEventListener('DOMContentLoaded', () => {
         localStorage.removeItem('adminToken');
         window.location.href = 'admin-login.html';
     });
+
+    // Handle CSV Export Report Download
+    if (downloadReportBtn) {
+        downloadReportBtn.addEventListener('click', () => {
+            const apiEndpoint = `${CONFIG.API_BASE_URL}/api/admin/transactions/export`;
+            
+            // Disable button during download to prevent double clicks and show loading state
+            downloadReportBtn.disabled = true;
+            const originalHTML = downloadReportBtn.innerHTML;
+            downloadReportBtn.innerHTML = '<i class="fa-solid fa-spinner fa-spin" style="margin-right: 5px;"></i>Downloading...';
+            
+            fetch(apiEndpoint, {
+                headers: {
+                    'Authorization': `Bearer ${adminToken}`
+                }
+            })
+            .then(response => {
+                if (response.status === 401) {
+                    localStorage.removeItem('adminUser');
+                    localStorage.removeItem('adminToken');
+                    window.location.href = 'admin-login.html';
+                    throw new Error('Unauthorized session. Please sign in again.');
+                }
+                if (!response.ok) {
+                    throw new Error('Failed to generate export report.');
+                }
+                return response.blob();
+            })
+            .then(blob => {
+                const url = window.URL.createObjectURL(blob);
+                const a = document.createElement('a');
+                a.style.display = 'none';
+                a.href = url;
+                a.download = 'library_transactions_report.csv';
+                document.body.appendChild(a);
+                a.click();
+                window.URL.revokeObjectURL(url);
+                a.remove();
+                showToast('CSV transaction report downloaded successfully!', 'success');
+            })
+            .catch(error => {
+                console.error('[Admin Dashboard] Export CSV error:', error);
+                showToast(error.message || 'Error downloading CSV report.', 'error');
+            })
+            .finally(() => {
+                downloadReportBtn.disabled = false;
+                downloadReportBtn.innerHTML = originalHTML;
+            });
+        });
+    }
 
     // Tab Switching Logic
     tabInventory.addEventListener('click', () => {

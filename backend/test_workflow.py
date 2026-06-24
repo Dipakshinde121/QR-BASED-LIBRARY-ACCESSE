@@ -348,6 +348,31 @@ class TestLibraryWorkflow(unittest.TestCase):
         self.assertIsInstance(stats_data['hourly_checkouts'], dict)
         print("[PASS] Workflow F: Visual Analytics statistics retrieved and schema validated.")
 
+        # ----------------------------------------------------
+        # 7. Workflow G: CSV Data Export
+        # ----------------------------------------------------
+        # Call GET /api/admin/transactions/export authenticated as admin
+        response = self.client.get('/api/admin/transactions/export',
+                                   headers={'Authorization': f'Bearer {admin_token}'})
+        self.assertEqual(response.status_code, 200)
+        self.assertEqual(response.mimetype, 'text/csv')
+        self.assertIn('attachment; filename=transactions_report.csv', response.headers.get('Content-Disposition', ''))
+        
+        # Decode data and verify contents
+        csv_content = response.data.decode('utf-8')
+        lines = csv_content.splitlines()
+        self.assertTrue(len(lines) > 0)
+        
+        # Check header
+        header = lines[0].split(',')
+        self.assertIn('Transaction ID', header)
+        self.assertIn('Student Name', header)
+        self.assertIn('Student Roll Number', header)
+        self.assertIn('Book Title', header)
+        self.assertIn('Transaction Status', header)
+        
+        print("[PASS] Workflow G: CSV Data Export report downloaded and verified.")
+
         print("--- Automated Library Workflow Test Completed Successfully ---\n")
 
 if __name__ == '__main__':

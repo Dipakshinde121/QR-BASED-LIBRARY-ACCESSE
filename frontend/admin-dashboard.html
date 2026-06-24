@@ -90,9 +90,14 @@
             <!-- Section 2: Active Checkouts -->
             <section id="section-checkouts" class="dashboard-section" style="display: none;">
                 <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 20px; flex-wrap: wrap; gap: 10px;">
-                    <h2 style="font-size: 16px; font-weight: 600; color: var(--text-primary);">
-                        Checked Out Book Records
-                    </h2>
+                    <div style="display: flex; align-items: center; gap: 15px;">
+                        <h2 style="font-size: 16px; font-weight: 600; color: var(--text-primary); margin: 0;">
+                            Checked Out Book Records
+                        </h2>
+                        <button type="button" id="download-report-btn" class="submit-btn" style="width: auto; padding: 6px 12px; font-size: 12px; margin: 0; background: linear-gradient(135deg, var(--accent-purple), #7c3aed); height: auto; line-height: normal; box-shadow: 0 2px 6px rgba(124, 58, 237, 0.25);">
+                            <i class="fa-solid fa-file-csv" style="margin-right: 5px;"></i>Download Report
+                        </button>
+                    </div>
                     <span class="info-badge" id="checkouts-count">Loading Logs...</span>
                 </div>
 

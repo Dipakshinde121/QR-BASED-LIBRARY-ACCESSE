@@ -464,3 +464,105 @@ def get_library_statistics():
         print("[Backend Admin] Error generating statistics:", str(error))
         return jsonify({'message': 'Database error.', 'error': str(error)}), 500
 
+
+@admin_bp.route('/transactions/export', methods=['GET'])
+@token_required(role='admin')
+def export_transactions_csv():
+    """
+    GET /api/admin/transactions/export
+    Queries entire transaction log and downloads as a CSV file.
+    """
+    import csv
+    import io
+    from flask import Response
+    
+    db_conn = get_db()
+    try:
+        sql = """
+            SELECT 
+                t.id AS transaction_id,
+                u.name AS student_name,
+                u.roll_number AS student_roll,
+                u.email AS student_email,
+                b.title AS book_title,
+                b.book_uid AS book_uid,
+                t.checkout_time,
+                t.due_time,
+                t.return_time,
+                t.status AS transaction_status,
+                f.fine_amount AS fine_amount,
+                f.status AS fine_status
+            FROM transactions t
+            JOIN users u ON t.user_id = u.id
+            JOIN books b ON t.book_id = b.id
+            LEFT JOIN fines f ON f.transaction_id = t.id
+            ORDER BY t.id DESC
+        """
+        with db_conn.cursor() as cursor:
+            cursor.execute(sql)
+            rows = cursor.fetchall()
+            
+        output = io.StringIO()
+        writer = csv.writer(output)
+        
+        # CSV Headers
+        writer.writerow([
+            'Transaction ID', 
+            'Student Name', 
+            'Student Roll Number', 
+            'Student Email', 
+            'Book Title', 
+            'Book UID', 
+            'Checkout Time', 
+            'Due Time', 
+            'Return Time', 
+            'Transaction Status', 
+            'Fine Amount', 
+            'Fine Status'
+        ])
+        
+        for row in rows:
+            # Handle datetime string conversion or datetime objects
+            checkout_t = row['checkout_time']
+            due_t = row['due_time']
+            return_t = row['return_time'] or "N/A"
+            
+            if isinstance(checkout_t, (datetime.date, datetime.datetime)):
+                checkout_t = checkout_t.isoformat()
+            if isinstance(due_t, (datetime.date, datetime.datetime)):
+                due_t = due_t.isoformat()
+            if isinstance(return_t, (datetime.date, datetime.datetime)):
+                return_t = return_t.isoformat()
+                
+            fine_val = row.get('fine_amount')
+            fine_amt = f"${float(fine_val):.2f}" if fine_val is not None else "$0.00"
+            fine_stat = (row.get('fine_status') or 'NONE').upper()
+            
+            writer.writerow([
+                row['transaction_id'],
+                row['student_name'],
+                row['student_roll'] or "N/A",
+                row['student_email'],
+                row['book_title'],
+                row['book_uid'],
+                checkout_t,
+                due_t,
+                return_t,
+                row['transaction_status'].upper(),
+                fine_amt,
+                fine_stat
+            ])
+            
+        response_data = output.getvalue()
+        output.close()
+        
+        return Response(
+            response_data,
+            mimetype="text/csv",
+            headers={"Content-disposition": "attachment; filename=transactions_report.csv"}
+        )
+    except Exception as error:
+        print("[Backend Admin] Error exporting CSV transactions log:", str(error))
+        return jsonify({'message': 'Database error.', 'error': str(error)}), 500
+
+
