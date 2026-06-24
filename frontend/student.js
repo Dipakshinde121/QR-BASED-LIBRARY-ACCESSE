@@ -22,7 +22,7 @@ document.addEventListener('DOMContentLoaded', () => {
         const payload = { roll_number: rollNumber, password };
 
         // Post credentials to backend student login API
-        fetch('http://localhost:5000/api/student/login', {
+        fetch(`${CONFIG.API_BASE_URL}/api/student/login`, {
             method: 'POST',
             headers: {
                 'Content-Type': 'application/json'
@@ -41,6 +41,7 @@ document.addEventListener('DOMContentLoaded', () => {
             
             // Store user session info
             localStorage.setItem('studentUser', JSON.stringify(result.user));
+            localStorage.setItem('studentToken', result.token);
 
             // Redirect to student dashboard on success
             window.location.href = 'student-dashboard.html';

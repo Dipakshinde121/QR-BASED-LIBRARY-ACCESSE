@@ -22,7 +22,7 @@ document.addEventListener('DOMContentLoaded', () => {
         const payload = { email, password };
 
         // Post credentials to backend server
-        fetch('http://localhost:5000/api/admin/login', {
+        fetch(`${CONFIG.API_BASE_URL}/api/admin/login`, {
             method: 'POST',
             headers: {
                 'Content-Type': 'application/json'
@@ -42,6 +42,7 @@ document.addEventListener('DOMContentLoaded', () => {
             
             // Store user session info (simulated session/JWT placeholder)
             localStorage.setItem('adminUser', JSON.stringify(result.user));
+            localStorage.setItem('adminToken', result.token);
 
             // Redirect to admin dashboard on success
             window.location.href = 'admin-dashboard.html';

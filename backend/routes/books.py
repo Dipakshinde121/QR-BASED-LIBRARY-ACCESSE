@@ -1,5 +1,7 @@
+import datetime
 from flask import Blueprint, jsonify
 from db import get_db
+from routes.crypto_helper import encrypt_payload
 
 books_bp = Blueprint('books', __name__)
 
@@ -22,13 +24,22 @@ def get_book_by_uid(book_uid):
             return jsonify({'message': 'Book not found'}), 404
 
         print(f'[Backend] Book found: "{row["title"]}" located at "{row["slot_location"]}"')
+        
+        # Generate secure encrypted payload for the QR code
+        qr_payload = {
+            'book_uid': row['book_uid'],
+            'timestamp': datetime.datetime.utcnow().isoformat()
+        }
+        encrypted_payload = encrypt_payload(qr_payload)
+        
         return jsonify({
             'id': row['id'],
             'book_uid': row['book_uid'],
             'title': row['title'],
             'author': row['author'],
             'slot_location': row['slot_location'],
-            'status': row['status']
+            'status': row['status'],
+            'encrypted_payload': encrypted_payload
         }), 200
 
     except Exception as error:

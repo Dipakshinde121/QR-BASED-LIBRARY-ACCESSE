@@ -1,7 +1,8 @@
 document.addEventListener('DOMContentLoaded', () => {
     // 1. Session Protection Check
     const adminUserStr = localStorage.getItem('adminUser');
-    if (!adminUserStr) {
+    const adminToken = localStorage.getItem('adminToken');
+    if (!adminUserStr || !adminToken) {
         alert('Session expired or unauthorized access. Please sign in.');
         window.location.href = 'admin-login.html';
         return;
@@ -28,6 +29,7 @@ document.addEventListener('DOMContentLoaded', () => {
     // Handle Logout
     logoutBtn.addEventListener('click', () => {
         localStorage.removeItem('adminUser');
+        localStorage.removeItem('adminToken');
         window.location.href = 'admin-login.html';
     });
 
@@ -73,15 +75,25 @@ document.addEventListener('DOMContentLoaded', () => {
      * Fetches all books from backend database and populates the dashboard UI table
      */
     function fetchInventory() {
-        const apiEndpoint = 'http://localhost:5000/api/admin/inventory';
+        const apiEndpoint = `${CONFIG.API_BASE_URL}/api/admin/inventory`;
 
-        fetch(apiEndpoint)
-            .then(response => {
-                if (!response.ok) {
-                    throw new Error('Failed to fetch library inventory.');
-                }
-                return response.json();
-            })
+        fetch(apiEndpoint, {
+            headers: {
+                'Authorization': `Bearer ${adminToken}`
+            }
+        })
+        .then(response => {
+            if (response.status === 401) {
+                localStorage.removeItem('adminUser');
+                localStorage.removeItem('adminToken');
+                window.location.href = 'admin-login.html';
+                throw new Error('Unauthorized');
+            }
+            if (!response.ok) {
+                throw new Error('Failed to fetch library inventory.');
+            }
+            return response.json();
+        })
             .then(books => {
                 console.log('[Admin Dashboard] Inventory loaded:', books);
                 
@@ -155,15 +167,25 @@ document.addEventListener('DOMContentLoaded', () => {
      * Fetches all active checkouts from backend database and populates the checkouts table
      */
     function fetchActiveCheckouts() {
-        const apiEndpoint = 'http://localhost:5000/api/admin/active-checkouts';
+        const apiEndpoint = `${CONFIG.API_BASE_URL}/api/admin/active-checkouts`;
 
-        fetch(apiEndpoint)
-            .then(response => {
-                if (!response.ok) {
-                    throw new Error('Failed to fetch active checkouts.');
-                }
-                return response.json();
-            })
+        fetch(apiEndpoint, {
+            headers: {
+                'Authorization': `Bearer ${adminToken}`
+            }
+        })
+        .then(response => {
+            if (response.status === 401) {
+                localStorage.removeItem('adminUser');
+                localStorage.removeItem('adminToken');
+                window.location.href = 'admin-login.html';
+                throw new Error('Unauthorized');
+            }
+            if (!response.ok) {
+                throw new Error('Failed to fetch active checkouts.');
+            }
+            return response.json();
+        })
             .then(checkouts => {
                 console.log('[Admin Dashboard] Active checkouts loaded:', checkouts);
                 
@@ -279,7 +301,7 @@ document.addEventListener('DOMContentLoaded', () => {
             return;
         }
 
-        const apiEndpoint = 'http://localhost:5000/api/admin/return-book';
+        const apiEndpoint = `${CONFIG.API_BASE_URL}/api/admin/return-book`;
         const payload = {
             transaction_id: transactionId
         };
@@ -287,11 +309,19 @@ document.addEventListener('DOMContentLoaded', () => {
         fetch(apiEndpoint, {
             method: 'POST',
             headers: {
-                'Content-Type': 'application/json'
+                'Content-Type': 'application/json',
+                'Authorization': `Bearer ${adminToken}`
             },
             body: JSON.stringify(payload)
         })
         .then(response => {
+            if (response.status === 401) {
+                alert('Session expired. Please sign in again.');
+                localStorage.removeItem('adminUser');
+                localStorage.removeItem('adminToken');
+                window.location.href = 'admin-login.html';
+                throw new Error('Unauthorized');
+            }
             if (!response.ok) {
                 return response.json().then(errData => {
                     throw new Error(errData.message || 'Failed to process book return.');

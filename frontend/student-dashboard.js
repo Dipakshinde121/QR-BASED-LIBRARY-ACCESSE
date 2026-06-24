@@ -1,7 +1,8 @@
 document.addEventListener('DOMContentLoaded', () => {
     // 1. Session Protection Guard
     const studentUserStr = localStorage.getItem('studentUser');
-    if (!studentUserStr) {
+    const studentToken = localStorage.getItem('studentToken');
+    if (!studentUserStr || !studentToken) {
         alert('Session expired or unauthorized access. Please sign in.');
         window.location.href = 'student-login.html';
         return;
@@ -27,6 +28,7 @@ document.addEventListener('DOMContentLoaded', () => {
     // Handle Logout
     logoutBtn.addEventListener('click', () => {
         localStorage.removeItem('studentUser');
+        localStorage.removeItem('studentToken');
         window.location.href = 'student-login.html';
     });
 
@@ -166,38 +168,38 @@ document.addEventListener('DOMContentLoaded', () => {
 
     function handleDecodedPayload(text) {
         console.log('[Scanner] Processing decoded payload...');
-        let bookUid = null;
+        const bookIdPayload = text.trim();
         
-        // 1. Try parsing JSON safely
-        try {
-            const parsed = JSON.parse(text);
-            bookUid = parsed.book_uid;
-            if (!bookUid) {
-                throw new Error('Missing book_uid field');
-            }
-        } catch (e) {
-            console.error('[Scanner] Failed to parse QR payload:', e);
+        if (!bookIdPayload) {
             showToast('Invalid Library QR Code.', 'error');
             return;
         }
 
         // 2. Perform Checkout fetch POST
-        const checkoutEndpoint = 'http://localhost:5000/api/student/checkout';
+        const checkoutEndpoint = `${CONFIG.API_BASE_URL}/api/student/checkout`;
         const requestPayload = {
             user_id: studentUser.id,
-            book_id: bookUid
+            book_id: bookIdPayload
         };
 
-        console.log('[Scanner] Sending checkout request for book:', bookUid);
+        console.log('[Scanner] Sending checkout request with encrypted QR token...');
 
         fetch(checkoutEndpoint, {
             method: 'POST',
             headers: {
-                'Content-Type': 'application/json'
+                'Content-Type': 'application/json',
+                'Authorization': `Bearer ${studentToken}`
             },
             body: JSON.stringify(requestPayload)
         })
         .then(response => {
+            if (response.status === 401) {
+                alert('Session expired. Please sign in again.');
+                localStorage.removeItem('studentUser');
+                localStorage.removeItem('studentToken');
+                window.location.href = 'student-login.html';
+                throw new Error('Unauthorized');
+            }
             if (!response.ok) {
                 // Read the error message from response if possible
                 return response.json().then(errData => {
@@ -234,15 +236,25 @@ document.addEventListener('DOMContentLoaded', () => {
      * Fetches current student's active unreturned borrow logs from backend
      */
     function fetchMyBooks() {
-        const apiEndpoint = `http://localhost:5000/api/student/active-checkouts/${studentUser.id}`;
+        const apiEndpoint = `${CONFIG.API_BASE_URL}/api/student/active-checkouts/${studentUser.id}`;
 
-        fetch(apiEndpoint)
-            .then(response => {
-                if (!response.ok) {
-                    throw new Error('Failed to fetch your borrow records.');
-                }
-                return response.json();
-            })
+        fetch(apiEndpoint, {
+            headers: {
+                'Authorization': `Bearer ${studentToken}`
+            }
+        })
+        .then(response => {
+            if (response.status === 401) {
+                localStorage.removeItem('studentUser');
+                localStorage.removeItem('studentToken');
+                window.location.href = 'student-login.html';
+                throw new Error('Unauthorized');
+            }
+            if (!response.ok) {
+                throw new Error('Failed to fetch your borrow records.');
+            }
+            return response.json();
+        })
             .then(checkouts => {
                 console.log('[Student Dashboard] Borrow logs loaded:', checkouts);
                 myBooksCount.textContent = `${checkouts.length} Book${checkouts.length !== 1 ? 's' : ''} Checked Out`;
@@ -336,7 +348,7 @@ document.addEventListener('DOMContentLoaded', () => {
      * Fetches all available books from backend database catalog
      */
     function fetchAvailableBooks() {
-        const apiEndpoint = 'http://localhost:5000/api/books/available';
+        const apiEndpoint = `${CONFIG.API_BASE_URL}/api/books/available`;
 
         fetch(apiEndpoint)
             .then(response => {

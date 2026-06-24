@@ -1,6 +1,7 @@
 import datetime
 from flask import Blueprint, jsonify, request
 from db import get_db
+from routes.auth import generate_token, token_required
 
 admin_bp = Blueprint('admin', __name__)
 
@@ -43,8 +44,13 @@ def admin_login():
             return jsonify({'message': 'Invalid credentials.'}), 401
 
         print(f'[Backend Admin] Login successful for administrator: "{user["name"]}"')
+        
+        # Generate JWT Token
+        token = generate_token(user['id'], 'admin')
+        
         return jsonify({
             'message': 'Login successful!',
+            'token': token,
             'user': {
                 'id': user['id'],
                 'name': user['name'],
@@ -62,6 +68,7 @@ def admin_login():
 
 
 @admin_bp.route('/inventory', methods=['GET'])
+@token_required(role='admin')
 def get_inventory():
     """
     GET /api/admin/inventory
@@ -84,6 +91,7 @@ def get_inventory():
 
 
 @admin_bp.route('/active-checkouts', methods=['GET'])
+@token_required(role='admin')
 def get_active_checkouts():
     """
     GET /api/admin/active-checkouts
@@ -133,6 +141,7 @@ def get_active_checkouts():
 
 
 @admin_bp.route('/return-book', methods=['POST'])
+@token_required(role='admin')
 def return_book():
     """
     POST /api/admin/return-book

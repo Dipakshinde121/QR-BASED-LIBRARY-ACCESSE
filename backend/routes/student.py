@@ -1,5 +1,7 @@
 from flask import Blueprint, jsonify, request
 from db import get_db
+from routes.auth import generate_token, token_required
+from routes.crypto_helper import decrypt_payload
 
 student_bp = Blueprint('student', __name__)
 
@@ -42,8 +44,13 @@ def student_login():
             return jsonify({'message': 'Invalid credentials.'}), 401
 
         print(f'[Backend Student] Login successful for student: "{user["name"]}"')
+        
+        # Generate JWT Token
+        token = generate_token(user['id'], 'student')
+        
         return jsonify({
             'message': 'Login successful!',
+            'token': token,
             'user': {
                 'id': user['id'],
                 'name': user['name'],
@@ -62,11 +69,15 @@ def student_login():
 import datetime
 
 @student_bp.route('/active-checkouts/<int:student_id>', methods=['GET'])
+@token_required(role='student')
 def get_student_active_checkouts(student_id):
     """
     GET /api/student/active-checkouts/<student_id>
     Fetches currently active checked-out books for a specific student.
     """
+    # Security check: Students can only view their own active checkouts
+    if int(request.current_user.get('sub')) != student_id:
+        return jsonify({'message': 'Access denied. You cannot view other student records.'}), 403
     try:
         print(f'[Backend Student] Fetching active checkouts for student ID: {student_id}')
         db = get_db()
@@ -109,6 +120,7 @@ def get_student_active_checkouts(student_id):
 
 
 @student_bp.route('/checkout', methods=['POST'])
+@token_required(role='student')
 def student_checkout():
     """
     POST /api/student/checkout
@@ -121,6 +133,16 @@ def student_checkout():
 
     if not user_id or not book_id:
         return jsonify({'message': 'Both user_id and book_id are required.'}), 400
+
+    # Security check: Students can only borrow books for themselves
+    if int(request.current_user.get('sub')) != int(user_id):
+        return jsonify({'message': 'Access denied. You can only checkout books for yourself.'}), 403
+
+    # Attempt to decrypt the book_id parameter (if it is an encrypted QR token)
+    decrypted = decrypt_payload(book_id)
+    if decrypted and 'book_uid' in decrypted:
+        book_id = decrypted['book_uid']
+        print(f"[Backend Student] Successfully decrypted book_id to: '{book_id}'")
 
     db_conn = get_db()
     try:

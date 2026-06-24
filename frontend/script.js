@@ -70,8 +70,8 @@ document.addEventListener('DOMContentLoaded', () => {
         // Hide book info from previous searches
         bookInfoCard.style.display = 'none';
 
-        // Express backend server runs on port 5000 (defined in .env)
-        const apiEndpoint = `http://localhost:5000/api/books/pickup/${encodeURIComponent(bookUid)}`;
+        // Read API endpoint from configuration
+        const apiEndpoint = `${CONFIG.API_BASE_URL}/api/books/pickup/${encodeURIComponent(bookUid)}`;
 
         fetch(apiEndpoint)
             .then(response => {
@@ -99,14 +99,7 @@ document.addEventListener('DOMContentLoaded', () => {
                     bookLocation.textContent = book.slot_location;
                     bookInfoCard.style.display = 'block';
 
-                    // 2. Generate secure payload
-                    const securePayload = {
-                        book_uid: book.book_uid,
-                        timestamp: new Date().toISOString(),
-                        secure_hash: generateMockSecureHash(book.book_uid)
-                    };
-
-                    // 3. Clear placeholder and render real QR code canvas
+                    // 2. Clear placeholder and render real QR code canvas
                     qrPlaceholder.innerHTML = '';
                     
                     const canvas = document.createElement('canvas');
@@ -118,7 +111,7 @@ document.addEventListener('DOMContentLoaded', () => {
 
                     new QRious({
                         element: canvas,
-                        value: JSON.stringify(securePayload),
+                        value: book.encrypted_payload, // Raw encrypted Fernet string
                         size: 200,
                         background: 'transparent',
                         foreground: '#06b6d4', // Accent cyan color
