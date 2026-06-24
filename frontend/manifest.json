@@ -1,0 +1,29 @@
+{
+  "name": "Library Kiosk Student App",
+  "short_name": "Library Kiosk",
+  "description": "Scan book QR codes, borrow materials, and monitor transaction logs directly from your mobile device.",
+  "start_url": "./student-login.html",
+  "display": "standalone",
+  "background_color": "#0b0f19",
+  "theme_color": "#8b5cf6",
+  "orientation": "portrait",
+  "icons": [
+    {
+      "src": "icon.svg",
+      "type": "image/svg+xml",
+      "sizes": "any"
+    },
+    {
+      "src": "icon.svg",
+      "type": "image/svg+xml",
+      "sizes": "192x192",
+      "purpose": "any"
+    },
+    {
+      "src": "icon.svg",
+      "type": "image/svg+xml",
+      "sizes": "512x512",
+      "purpose": "any maskable"
+    }
+  ]
+}
