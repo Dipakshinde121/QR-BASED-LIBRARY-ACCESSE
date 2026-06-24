@@ -210,6 +210,18 @@ def student_checkout():
         db_conn.commit()
         print(f"[Backend Student] Book '{book['title']}' (UID: {book['book_uid']}) successfully checked out by {user['name']}.")
 
+        # Emit real-time WebSocket update for admin dashboard
+        try:
+            from extensions import socketio
+            socketio.emit('checkout_update', {
+                'message': f"Book '{book['title']}' checked out",
+                'student_name': user['name'],
+                'book_title': book['title']
+            })
+            print("[WebSocket] Emitted checkout_update event to clients.")
+        except Exception as ws_err:
+            print("[WebSocket] Error emitting checkout_update event:", str(ws_err))
+
         return jsonify({
             'message': 'Book Successfully Checked Out!',
             'book': {

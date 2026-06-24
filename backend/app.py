@@ -9,6 +9,7 @@ load_dotenv()
 
 # Import db and blueprints
 import db
+from extensions import socketio
 from routes.books import books_bp
 from routes.admin import admin_bp
 from routes.student import student_bp
@@ -18,6 +19,9 @@ PORT = int(os.getenv('PORT', 5000))
 
 # Enable CORS for all routes
 CORS(app)
+
+# Initialize SocketIO
+socketio.init_app(app)
 
 # Initialize database context lifecycle
 db.init_app(app)
@@ -48,4 +52,4 @@ def root_route():
 if __name__ == '__main__':
     print(f'Server is running on port {PORT}')
     # Turn off debug mode reloader to avoid initial database connection log duplication
-    app.run(host='0.0.0.0', port=PORT, debug=False)
+    socketio.run(app, host='0.0.0.0', port=PORT, debug=False)

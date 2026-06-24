@@ -373,6 +373,90 @@ class TestLibraryWorkflow(unittest.TestCase):
         
         print("[PASS] Workflow G: CSV Data Export report downloaded and verified.")
 
+        # ----------------------------------------------------
+        # 8. Workflow H: Real-time WebSockets Syncing
+        # ----------------------------------------------------
+        # Connect socket client
+        from extensions import socketio
+        socket_client = socketio.test_client(app)
+        self.assertTrue(socket_client.is_connected())
+        
+        # Clear any initial connection events
+        socket_client.get_received()
+        
+        # Reset BK-ALG-101 status to available to allow checkout
+        with app.app_context():
+            db_conn = db.get_db()
+            with db_conn.cursor() as cursor:
+                cursor.execute("UPDATE books SET status = 'available' WHERE book_uid = 'BK-ALG-101';")
+                cursor.execute("DELETE FROM transactions;")
+                cursor.execute("DELETE FROM fines;")
+            db_conn.commit()
+            
+        # Get encrypted QR token
+        response = self.client.get('/api/books/pickup/BK-ALG-101')
+        self.assertEqual(response.status_code, 200)
+        book = json.loads(response.data)
+        encrypted_qr_token = book['encrypted_payload']
+        
+        # Perform checkout
+        checkout_payload = {
+            'user_id': student_id,
+            'book_id': encrypted_qr_token
+        }
+        response = self.client.post('/api/student/checkout',
+                                    data=json.dumps(checkout_payload),
+                                    content_type='application/json',
+                                    headers={'Authorization': f'Bearer {student_token}'})
+        self.assertEqual(response.status_code, 200)
+        
+        # Receive and verify the event
+        received_events = socket_client.get_received()
+        self.assertTrue(len(received_events) > 0)
+        
+        checkout_event = None
+        for event in received_events:
+            if event['name'] == 'checkout_update':
+                checkout_event = event
+                break
+                
+        self.assertIsNotNone(checkout_event)
+        self.assertEqual(checkout_event['args'][0]['student_name'], 'Satyam Kumar')
+        self.assertEqual(checkout_event['args'][0]['book_title'], 'Introduction to Algorithms')
+        print("[PASS] Workflow H: Verified real-time 'checkout_update' event received over WebSockets.")
+        
+        # Verify return event
+        with app.app_context():
+            db_conn = db.get_db()
+            with db_conn.cursor() as cursor:
+                cursor.execute("SELECT id FROM transactions WHERE status = 'active';")
+                tx = cursor.fetchone()
+                tx_id = tx['id'] if isinstance(tx, dict) else tx[0]
+                
+        return_payload = {
+            'transaction_id': tx_id
+        }
+        response = self.client.post('/api/admin/return-book',
+                                    data=json.dumps(return_payload),
+                                    content_type='application/json',
+                                    headers={'Authorization': f'Bearer {admin_token}'})
+        self.assertEqual(response.status_code, 200)
+        
+        received_events = socket_client.get_received()
+        self.assertTrue(len(received_events) > 0)
+        
+        return_event = None
+        for event in received_events:
+            if event['name'] == 'return_update':
+                return_event = event
+                break
+                
+        self.assertIsNotNone(return_event)
+        self.assertEqual(return_event['args'][0]['transaction_id'], tx_id)
+        print("[PASS] Workflow H: Verified real-time 'return_update' event received over WebSockets.")
+        
+        socket_client.disconnect()
+
         print("--- Automated Library Workflow Test Completed Successfully ---\n")
 
 if __name__ == '__main__':

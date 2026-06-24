@@ -240,6 +240,17 @@ def return_book():
         db_conn.commit()
         print(f"[Backend Admin] Book return transaction ID {transaction['id']} processed successfully. Overdue: {is_overdue}, Fine: {fine_amount}")
 
+        # Emit real-time WebSocket update for active checkouts & inventory
+        try:
+            from extensions import socketio
+            socketio.emit('return_update', {
+                'message': f"Book returned successfully.",
+                'transaction_id': transaction['id']
+            })
+            print("[WebSocket] Emitted return_update event.")
+        except Exception as ws_err:
+            print("[WebSocket] Error emitting return_update event:", str(ws_err))
+
         return jsonify({
             'message': 'Book successfully returned.',
             'transaction_id': transaction['id'],

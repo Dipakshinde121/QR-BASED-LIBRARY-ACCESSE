@@ -882,4 +882,54 @@ document.addEventListener('DOMContentLoaded', () => {
             }
         });
     }
+
+    // Initialize Socket.IO connection to the backend sync server
+    try {
+        const socket = io(CONFIG.API_BASE_URL);
+        
+        socket.on('connect', () => {
+            console.log('[WebSocket] Connected to real-time sync server.');
+        });
+        
+        socket.on('checkout_update', (data) => {
+            console.log('[WebSocket] Real-time checkout update received:', data);
+            showToast(`${data.student_name} checked out "${data.book_title}"`, 'success');
+            
+            // Re-fetch lists dynamically depending on which tab is active
+            const activeTab = document.querySelector('.tab-btn.active');
+            if (activeTab) {
+                if (activeTab.id === 'tab-checkouts') {
+                    fetchActiveCheckouts();
+                } else if (activeTab.id === 'tab-inventory') {
+                    fetchInventory();
+                } else if (activeTab.id === 'tab-analytics') {
+                    fetchAnalytics();
+                }
+            }
+        });
+        
+        socket.on('return_update', (data) => {
+            console.log('[WebSocket] Real-time return update received:', data);
+            
+            // Re-fetch lists dynamically depending on which tab is active
+            const activeTab = document.querySelector('.tab-btn.active');
+            if (activeTab) {
+                if (activeTab.id === 'tab-checkouts') {
+                    fetchActiveCheckouts();
+                } else if (activeTab.id === 'tab-inventory') {
+                    fetchInventory();
+                } else if (activeTab.id === 'tab-fines') {
+                    fetchFines();
+                } else if (activeTab.id === 'tab-analytics') {
+                    fetchAnalytics();
+                }
+            }
+        });
+        
+        socket.on('disconnect', () => {
+            console.log('[WebSocket] Disconnected from server.');
+        });
+    } catch (wsErr) {
+        console.error('[WebSocket] Initialization failed:', wsErr);
+    }
 });
