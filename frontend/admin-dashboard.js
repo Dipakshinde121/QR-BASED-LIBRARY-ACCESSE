@@ -18,10 +18,14 @@ document.addEventListener('DOMContentLoaded', () => {
     
     const tabInventory = document.getElementById('tab-inventory');
     const tabCheckouts = document.getElementById('tab-checkouts');
+    const tabFines = document.getElementById('tab-fines');
     const sectionInventory = document.getElementById('section-inventory');
     const sectionCheckouts = document.getElementById('section-checkouts');
+    const sectionFines = document.getElementById('section-fines');
     const checkoutsTableBody = document.getElementById('checkouts-table-body');
     const checkoutsCount = document.getElementById('checkouts-count');
+    const finesTableBody = document.getElementById('fines-table-body');
+    const finesCount = document.getElementById('fines-count');
 
     // Update Welcome Title
     adminWelcome.textContent = `Welcome, ${adminUser.name}`;
@@ -42,29 +46,52 @@ document.addEventListener('DOMContentLoaded', () => {
         switchTab('checkouts');
     });
 
+    if (tabFines) {
+        tabFines.addEventListener('click', () => {
+            switchTab('fines');
+        });
+    }
+
     function switchTab(tabName) {
+        // Reset tab active classes and styles
+        tabInventory.classList.remove('active');
+        tabCheckouts.classList.remove('active');
+        if (tabFines) tabFines.classList.remove('active');
+        
+        tabInventory.style.color = 'var(--text-muted)';
+        tabInventory.style.borderBottom = '3px solid transparent';
+        tabCheckouts.style.color = 'var(--text-muted)';
+        tabCheckouts.style.borderBottom = '3px solid transparent';
+        if (tabFines) {
+            tabFines.style.color = 'var(--text-muted)';
+            tabFines.style.borderBottom = '3px solid transparent';
+        }
+
+        // Hide all sections
+        sectionInventory.style.display = 'none';
+        sectionCheckouts.style.display = 'none';
+        if (sectionFines) sectionFines.style.display = 'none';
+
         if (tabName === 'inventory') {
             tabInventory.classList.add('active');
-            tabCheckouts.classList.remove('active');
             tabInventory.style.color = 'var(--text-primary)';
             tabInventory.style.borderBottom = '3px solid var(--accent-cyan)';
-            tabCheckouts.style.color = 'var(--text-muted)';
-            tabCheckouts.style.borderBottom = '3px solid transparent';
-
             sectionInventory.style.display = 'block';
-            sectionCheckouts.style.display = 'none';
             fetchInventory();
-        } else {
+        } else if (tabName === 'checkouts') {
             tabCheckouts.classList.add('active');
-            tabInventory.classList.remove('active');
             tabCheckouts.style.color = 'var(--text-primary)';
             tabCheckouts.style.borderBottom = '3px solid var(--accent-cyan)';
-            tabInventory.style.color = 'var(--text-muted)';
-            tabInventory.style.borderBottom = '3px solid transparent';
-
             sectionCheckouts.style.display = 'block';
-            sectionInventory.style.display = 'none';
             fetchActiveCheckouts();
+        } else if (tabName === 'fines') {
+            if (tabFines) {
+                tabFines.classList.add('active');
+                tabFines.style.color = 'var(--text-primary)';
+                tabFines.style.borderBottom = '3px solid var(--accent-cyan)';
+            }
+            if (sectionFines) sectionFines.style.display = 'block';
+            fetchFines();
         }
     }
 
@@ -333,7 +360,11 @@ document.addEventListener('DOMContentLoaded', () => {
         })
         .then(data => {
             console.log('[Admin Dashboard] Book return successful:', data);
-            showToast('Book successfully returned.', 'success');
+            if (data.overdue) {
+                showToast(`Overdue return! Fine of $${data.fine_amount.toFixed(2)} generated (${data.days_overdue} days late).`, 'error');
+            } else {
+                showToast('Book successfully returned.', 'success');
+            }
             fetchActiveCheckouts();
             fetchInventory();
         })
@@ -380,5 +411,160 @@ document.addEventListener('DOMContentLoaded', () => {
                 toast.remove();
             }, 300);
         }, 4000);
+    }
+
+    /**
+     * Fetches all fines (active and historic) from the database
+     */
+    function fetchFines() {
+        const apiEndpoint = `${CONFIG.API_BASE_URL}/api/admin/fines`;
+
+        fetch(apiEndpoint, {
+            headers: {
+                'Authorization': `Bearer ${adminToken}`
+            }
+        })
+        .then(response => {
+            if (response.status === 401) {
+                localStorage.removeItem('adminUser');
+                localStorage.removeItem('adminToken');
+                window.location.href = 'admin-login.html';
+                throw new Error('Unauthorized');
+            }
+            if (!response.ok) {
+                throw new Error('Failed to fetch library fines.');
+            }
+            return response.json();
+        })
+        .then(fines => {
+            console.log('[Admin Dashboard] Fines loaded:', fines);
+            
+            finesCount.textContent = `${fines.length} Fine Record${fines.length !== 1 ? 's' : ''}`;
+            finesTableBody.innerHTML = '';
+
+            if (fines.length === 0) {
+                finesTableBody.innerHTML = `
+                    <tr>
+                        <td colspan="6" style="padding: 45px; text-align: center; color: var(--text-muted);">
+                            <i class="fa-solid fa-face-smile" style="font-size: 24px; margin-bottom: 10px; opacity: 0.5; color: var(--accent-cyan);"></i>
+                            <div>No library fines on record. Excellent!</div>
+                        </td>
+                    </tr>
+                `;
+                return;
+            }
+
+            fines.forEach(fine => {
+                const row = document.createElement('tr');
+                const isPaid = fine.status === 'paid';
+
+                // Format Dates
+                const dueDate = new Date(fine.due_time);
+                const formattedDueDate = dueDate.toLocaleDateString(undefined, {
+                    year: 'numeric', month: 'short', day: 'numeric', hour: '2-digit', minute: '2-digit'
+                });
+
+                let formattedReturnDate = '-';
+                if (fine.return_time) {
+                    const returnDate = new Date(fine.return_time);
+                    formattedReturnDate = returnDate.toLocaleDateString(undefined, {
+                        year: 'numeric', month: 'short', day: 'numeric', hour: '2-digit', minute: '2-digit'
+                    });
+                }
+
+                const statusClass = isPaid ? 'status-ok' : 'status-overdue';
+                const statusIcon = isPaid ? 'fa-circle-check' : 'fa-triangle-exclamation';
+                const statusText = isPaid ? 'Paid' : 'Unpaid';
+
+                // Actions cell
+                let actionBtn = '-';
+                if (!isPaid) {
+                    actionBtn = `
+                        <button type="button" class="submit-btn collect-fine-btn" data-fine-id="${fine.id}" style="width: auto; padding: 6px 12px; font-size: 12px; background: linear-gradient(135deg, #f59e0b, #d97706); box-shadow: 0 2px 6px rgba(217, 119, 6, 0.25);">
+                            <i class="fa-solid fa-cash-register" style="margin-right: 4px;"></i> Collect
+                        </button>
+                    `;
+                }
+
+                row.innerHTML = `
+                    <td>
+                        <div style="font-weight: 500; color: var(--text-primary); margin-bottom: 2px;">${fine.student_name}</div>
+                        <div style="font-size: 12px; color: var(--text-muted); font-family: monospace;">Roll: ${fine.student_roll || 'Admin'}</div>
+                    </td>
+                    <td>
+                        <div style="font-weight: 500; color: var(--text-primary);">${fine.book_title}</div>
+                    </td>
+                    <td style="color: var(--text-muted); font-size: 13px; line-height: 1.4;">
+                        <div><strong style="font-size: 10px; text-transform: uppercase; color: var(--text-muted);">Due:</strong> ${formattedDueDate}</div>
+                        <div><strong style="font-size: 10px; text-transform: uppercase; color: var(--text-muted);">Ret:</strong> ${formattedReturnDate}</div>
+                    </td>
+                    <td style="font-weight: 600; color: ${isPaid ? 'var(--text-primary)' : '#ef4444'};">
+                        $${fine.fine_amount.toFixed(2)}
+                    </td>
+                    <td>
+                        <span class="status-badge ${statusClass}">
+                            <i class="fa-solid ${statusIcon}"></i> ${statusText}
+                        </span>
+                    </td>
+                    <td>
+                        ${actionBtn}
+                    </td>
+                `;
+                finesTableBody.appendChild(row);
+            });
+
+            // Attach listeners to Collect buttons
+            document.querySelectorAll('.collect-fine-btn').forEach(btn => {
+                btn.addEventListener('click', (e) => {
+                    const fineId = e.currentTarget.getAttribute('data-fine-id');
+                    if (confirm('Confirm payment collection for this fine?')) {
+                        collectFinePayment(fineId);
+                    }
+                });
+            });
+        })
+        .catch(error => {
+            console.error('[Admin Dashboard] Fines fetch error:', error);
+            finesCount.textContent = 'Connection Error';
+            finesTableBody.innerHTML = `
+                <tr>
+                    <td colspan="6" style="padding: 40px; text-align: center; color: hsl(346, 84%, 61%);">
+                        <i class="fa-solid fa-circle-exclamation" style="font-size: 24px; margin-bottom: 10px;"></i>
+                        <div>Failed to load fines database. Connect your backend server.</div>
+                    </td>
+                </tr>
+            `;
+        });
+    }
+
+    /**
+     * Sends payment POST request to collect fine
+     */
+    function collectFinePayment(fineId) {
+        const apiEndpoint = `${CONFIG.API_BASE_URL}/api/admin/pay-fine`;
+        
+        fetch(apiEndpoint, {
+            method: 'POST',
+            headers: {
+                'Content-Type': 'application/json',
+                'Authorization': `Bearer ${adminToken}`
+            },
+            body: JSON.stringify({ fine_id: fineId })
+        })
+        .then(response => {
+            if (!response.ok) {
+                return response.json().then(err => { throw new Error(err.message || 'Payment collection failed.'); });
+            }
+            return response.json();
+        })
+        .then(data => {
+            console.log('[Admin Dashboard] Fine paid successfully:', data);
+            showToast('Fine payment collected successfully!', 'success');
+            fetchFines();
+        })
+        .catch(error => {
+            console.error('[Admin Dashboard] Fine payment collection error:', error);
+            showToast(error.message || 'Error collecting fine payment.', 'error');
+        });
     }
 });

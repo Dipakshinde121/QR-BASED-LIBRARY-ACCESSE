@@ -47,6 +47,9 @@
                 <button type="button" id="tab-checkouts" class="tab-btn" style="background: none; border: none; font-size: 14px; font-weight: 600; padding: 8px 16px; cursor: pointer; color: var(--text-muted); border-bottom: 3px solid transparent; transition: var(--transition-smooth); margin-bottom: -15px;">
                     <i class="fa-solid fa-clock-rotate-left" style="margin-right: 6px;"></i>Active Checkouts
                 </button>
+                <button type="button" id="tab-fines" class="tab-btn" style="background: none; border: none; font-size: 14px; font-weight: 600; padding: 8px 16px; cursor: pointer; color: var(--text-muted); border-bottom: 3px solid transparent; transition: var(--transition-smooth); margin-bottom: -15px;">
+                    <i class="fa-solid fa-hand-holding-dollar" style="margin-right: 6px;"></i>Fines Management
+                </button>
             </nav>
 
             <!-- Section 1: Complete Book Inventory -->
@@ -107,6 +110,40 @@
                                 <td colspan="5" style="padding: 40px; text-align: center; color: var(--text-muted);">
                                     <i class="fa-solid fa-spinner fa-spin" style="color: var(--accent-cyan); font-size: 24px; margin-bottom: 10px;"></i>
                                     <div>Loading transaction logs...</div>
+                                </td>
+                            </tr>
+                        </tbody>
+                    </table>
+                </div>
+            </section>
+
+            <!-- Section 3: Fines Management -->
+            <section id="section-fines" class="dashboard-section" style="display: none;">
+                <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 20px; flex-wrap: wrap; gap: 10px;">
+                    <h2 style="font-size: 16px; font-weight: 600; color: var(--text-primary);">
+                        Library Overdue Fines
+                    </h2>
+                    <span class="info-badge" id="fines-count" style="background: rgba(245, 158, 11, 0.08); border-color: rgba(245, 158, 11, 0.25); color: #f59e0b;">Loading Fines...</span>
+                </div>
+
+                <!-- Table Wrapper -->
+                <div class="table-container">
+                    <table style="width: 100%; border-collapse: collapse; text-align: left; font-size: 14px;">
+                        <thead>
+                            <tr style="background: rgba(255, 255, 255, 0.03); border-bottom: 1.5px solid var(--card-border);">
+                                <th style="padding: 16px 20px; font-weight: 600; color: var(--text-muted); text-transform: uppercase; letter-spacing: 0.5px; font-size: 12px;">Student Profile</th>
+                                <th style="padding: 16px 20px; font-weight: 600; color: var(--text-muted); text-transform: uppercase; letter-spacing: 0.5px; font-size: 12px;">Book Title</th>
+                                <th style="padding: 16px 20px; font-weight: 600; color: var(--text-muted); text-transform: uppercase; letter-spacing: 0.5px; font-size: 12px;">Due & Return Dates</th>
+                                <th style="padding: 16px 20px; font-weight: 600; color: var(--text-muted); text-transform: uppercase; letter-spacing: 0.5px; font-size: 12px;">Fine Amount</th>
+                                <th style="padding: 16px 20px; font-weight: 600; color: var(--text-muted); text-transform: uppercase; letter-spacing: 0.5px; font-size: 12px;">Status</th>
+                                <th style="padding: 16px 20px; font-weight: 600; color: var(--text-muted); text-transform: uppercase; letter-spacing: 0.5px; font-size: 12px;">Actions</th>
+                            </tr>
+                        </thead>
+                        <tbody id="fines-table-body">
+                            <tr id="fines-loading-row">
+                                <td colspan="6" style="padding: 40px; text-align: center; color: var(--text-muted);">
+                                    <i class="fa-solid fa-spinner fa-spin" style="color: var(--accent-cyan); font-size: 24px; margin-bottom: 10px;"></i>
+                                    <div>Loading fines history...</div>
                                 </td>
                             </tr>
                         </tbody>

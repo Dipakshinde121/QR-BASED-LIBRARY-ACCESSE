@@ -165,7 +165,21 @@ def init_sqlite_tables(conn):
     """)
     conn.commit()
 
-    # 4. Check if we need to seed mock data
+    # 4. Create Fines Table
+    cursor.execute("""
+    CREATE TABLE IF NOT EXISTS fines (
+      id INTEGER PRIMARY KEY AUTOINCREMENT,
+      transaction_id INTEGER NOT NULL,
+      fine_amount REAL NOT NULL,
+      status TEXT NOT NULL CHECK(status IN ('unpaid', 'paid')),
+      created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+      updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+      FOREIGN KEY (transaction_id) REFERENCES transactions (id) ON DELETE CASCADE
+    );
+    """)
+    conn.commit()
+
+    # 5. Check if we need to seed mock data
     cursor.execute("SELECT COUNT(*) as count FROM users")
     if cursor.fetchone()[0] == 0:
         print("[SQLite Seed] Seeding mock users...")

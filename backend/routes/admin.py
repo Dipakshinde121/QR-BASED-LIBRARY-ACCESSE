@@ -162,7 +162,7 @@ def return_book():
         with db_conn.cursor() as cursor:
             if transaction_id:
                 # Resolve by transaction_id
-                sql = 'SELECT id, book_id, status FROM transactions WHERE id = %s'
+                sql = 'SELECT id, book_id, due_time, status FROM transactions WHERE id = %s'
                 cursor.execute(sql, (transaction_id,))
                 transaction = cursor.fetchone()
             elif book_id:
@@ -173,7 +173,7 @@ def return_book():
                 book = cursor.fetchone()
                 if book:
                     # Find active checkout transaction for this book
-                    sql_tx = "SELECT id, book_id, status FROM transactions WHERE book_id = %s AND status != 'returned' AND return_time IS NULL LIMIT 1"
+                    sql_tx = "SELECT id, book_id, due_time, status FROM transactions WHERE book_id = %s AND status != 'returned' AND return_time IS NULL LIMIT 1"
                     cursor.execute(sql_tx, (book['id'],))
                     transaction = cursor.fetchone()
 
@@ -184,6 +184,33 @@ def return_book():
             return jsonify({'message': 'This transaction is already marked as returned.'}), 400
 
         # 2. Database update transaction logic
+        import math
+        fine_amount = 0.0
+        days_overdue = 0
+        is_overdue = False
+
+        due_time_val = transaction['due_time']
+        if isinstance(due_time_val, str):
+            try:
+                if '.' in due_time_val:
+                    due_time = datetime.datetime.strptime(due_time_val, "%Y-%m-%d %H:%M:%S.%f")
+                else:
+                    due_time = datetime.datetime.strptime(due_time_val, "%Y-%m-%d %H:%M:%S")
+            except Exception as e:
+                print(f"[Backend Admin] Error parsing due_time '{due_time_val}':", str(e))
+                due_time = datetime.datetime.utcnow()
+        else:
+            due_time = due_time_val
+
+        now = datetime.datetime.utcnow()
+        if now > due_time:
+            diff = now - due_time
+            if diff.total_seconds() > 0:
+                is_overdue = True
+                days_overdue = math.ceil(diff.total_seconds() / 86400.0)
+                FINE_RATE_PER_DAY = 10.00
+                fine_amount = days_overdue * FINE_RATE_PER_DAY
+
         with db_conn.cursor() as cursor:
             # Query 1: Update transactions status and return_time
             sql_update_tx = """
@@ -201,14 +228,25 @@ def return_book():
             """
             cursor.execute(sql_update_book, (transaction['book_id'],))
 
+            # Query 3: If overdue, insert fine record
+            if is_overdue and fine_amount > 0:
+                sql_insert_fine = """
+                    INSERT INTO fines (transaction_id, fine_amount, status)
+                    VALUES (%s, %s, 'unpaid')
+                """
+                cursor.execute(sql_insert_fine, (transaction['id'], fine_amount))
+
         # Commit transaction changes to database
         db_conn.commit()
-        print(f"[Backend Admin] Book return transaction ID {transaction['id']} processed successfully.")
+        print(f"[Backend Admin] Book return transaction ID {transaction['id']} processed successfully. Overdue: {is_overdue}, Fine: {fine_amount}")
 
         return jsonify({
             'message': 'Book successfully returned.',
             'transaction_id': transaction['id'],
-            'book_id': transaction['book_id']
+            'book_id': transaction['book_id'],
+            'overdue': is_overdue,
+            'days_overdue': days_overdue,
+            'fine_amount': fine_amount
         }), 200
 
     except Exception as error:
@@ -246,4 +284,81 @@ def trigger_reminders():
             'message': 'Failed to run manual reminders job.',
             'error': str(error)
         }), 500
+
+
+@admin_bp.route('/fines', methods=['GET'])
+@token_required(role='admin')
+def get_all_fines():
+    """
+    GET /api/admin/fines
+    Returns all fine records with user, book, and transaction details.
+    """
+    try:
+        db_conn = get_db()
+        with db_conn.cursor() as cursor:
+            sql = """
+                SELECT f.id, f.fine_amount, f.status, f.created_at, 
+                       u.name AS student_name, u.roll_number AS student_roll,
+                       b.title AS book_title, t.due_time, t.return_time
+                FROM fines f
+                JOIN transactions t ON f.transaction_id = t.id
+                JOIN users u ON t.user_id = u.id
+                JOIN books b ON t.book_id = b.id
+                ORDER BY f.created_at DESC
+            """
+            cursor.execute(sql)
+            rows = cursor.fetchall()
+            
+        # Format datetime columns to ISO string
+        formatted_rows = []
+        for row in rows:
+            formatted_row = dict(row)
+            for key in ['created_at', 'due_time', 'return_time']:
+                val = formatted_row.get(key)
+                if isinstance(val, (datetime.date, datetime.datetime)):
+                    formatted_row[key] = val.isoformat()
+            formatted_rows.append(formatted_row)
+            
+        return jsonify(formatted_rows), 200
+    except Exception as error:
+        print("[Backend Admin] Error fetching all fines:", str(error))
+        return jsonify({'message': 'Database error.', 'error': str(error)}), 500
+
+
+@admin_bp.route('/pay-fine', methods=['POST'])
+@token_required(role='admin')
+def pay_fine():
+    """
+    POST /api/admin/pay-fine
+    Marks a student's outstanding fine as paid.
+    Body: { fine_id }
+    """
+    data = request.get_json() or {}
+    fine_id = data.get('fine_id')
+    if not fine_id:
+        return jsonify({'message': 'fine_id is required.'}), 400
+        
+    db_conn = get_db()
+    try:
+        with db_conn.cursor() as cursor:
+            # Check if fine exists
+            cursor.execute("SELECT id, status FROM fines WHERE id = %s", (fine_id,))
+            fine = cursor.fetchone()
+            if not fine:
+                return jsonify({'message': 'Fine record not found.'}), 404
+                
+            if fine['status'] == 'paid':
+                return jsonify({'message': 'Fine is already paid.'}), 400
+                
+            # Update status
+            cursor.execute("UPDATE fines SET status = 'paid' WHERE id = %s", (fine_id,))
+        db_conn.commit()
+        print(f"[Backend Admin] Fine ID {fine_id} successfully marked as paid.")
+        return jsonify({
+            'message': 'Fine marked as paid successfully.',
+            'fine_id': fine_id
+        }), 200
+    except Exception as error:
+        print('[Backend Admin] Error marking fine as paid:', str(error))
+        return jsonify({'message': 'Database error.', 'error': str(error)}), 500
 

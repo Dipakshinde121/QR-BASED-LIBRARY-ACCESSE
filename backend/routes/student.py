@@ -146,6 +146,23 @@ def student_checkout():
 
     db_conn = get_db()
     try:
+        # Check if student has outstanding unpaid fines
+        with db_conn.cursor() as cursor:
+            sql_unpaid_fines = """
+                SELECT COUNT(*) as count 
+                FROM fines f
+                JOIN transactions t ON f.transaction_id = t.id
+                WHERE t.user_id = %s AND f.status = 'unpaid'
+            """
+            cursor.execute(sql_unpaid_fines, (user_id,))
+            fines_count_row = cursor.fetchone()
+            unpaid_count = fines_count_row['count'] if isinstance(fines_count_row, dict) else fines_count_row[0]
+            if unpaid_count > 0:
+                print(f"[Backend Student] Checkout blocked for user ID {user_id} due to unpaid fines.")
+                return jsonify({
+                    'message': 'Checkout blocked. You have outstanding unpaid library fines. Please resolve them first.'
+                }), 403
+
         # 1. Resolve book and check status
         # Since book_id might be the database id or the string book_uid from the QR, we handle both.
         with db_conn.cursor() as cursor:
@@ -212,6 +229,51 @@ def student_checkout():
         
         return jsonify({
             'message': 'Database checkout transaction failed.',
+            'error': str(error)
+        }), 500
+
+
+@student_bp.route('/fines/<int:student_id>', methods=['GET'])
+@token_required(role='student')
+def get_student_fines(student_id):
+    """
+    GET /api/student/fines/<int:student_id>
+    Fetches active and historical fines for the student.
+    """
+    # Security check: Students can only view their own fines
+    if int(request.current_user.get('sub')) != int(student_id):
+        return jsonify({'message': 'Access denied. You can only view your own fines.'}), 403
+
+    db_conn = get_db()
+    try:
+        with db_conn.cursor() as cursor:
+            sql = """
+                SELECT f.id, f.fine_amount, f.status, f.created_at,
+                       b.title AS book_title, t.due_time, t.return_time
+                FROM fines f
+                JOIN transactions t ON f.transaction_id = t.id
+                JOIN books b ON t.book_id = b.id
+                WHERE t.user_id = %s
+                ORDER BY f.created_at DESC
+            """
+            cursor.execute(sql, (student_id,))
+            rows = cursor.fetchall()
+
+        formatted_rows = []
+        for row in rows:
+            formatted_row = dict(row)
+            for key in ['created_at', 'due_time', 'return_time']:
+                val = formatted_row.get(key)
+                if isinstance(val, (datetime.date, datetime.datetime)):
+                    formatted_row[key] = val.isoformat()
+            formatted_rows.append(formatted_row)
+
+        return jsonify(formatted_rows), 200
+
+    except Exception as error:
+        print(f'[Backend Student] Error fetching fines for student ID {student_id}:', str(error))
+        return jsonify({
+            'message': 'Database query error.',
             'error': str(error)
         }), 500
 

@@ -219,6 +219,7 @@ document.addEventListener('DOMContentLoaded', () => {
             // Refresh dashboard lists immediately
             fetchMyBooks();
             fetchAvailableBooks();
+            fetchFines();
         })
         .catch(error => {
             console.error('[Scanner] Checkout error:', error);
@@ -231,6 +232,112 @@ document.addEventListener('DOMContentLoaded', () => {
     // Load initial data
     fetchMyBooks();
     fetchAvailableBooks();
+    fetchFines();
+
+    /**
+     * Fetches student's fines history and checks for unpaid fees
+     */
+    function fetchFines() {
+        const apiEndpoint = `${CONFIG.API_BASE_URL}/api/student/fines/${studentUser.id}`;
+        const unpaidAlert = document.getElementById('unpaid-fines-alert');
+        const sectionFines = document.getElementById('section-fines');
+        const finesTableBody = document.getElementById('my-fines-table-body');
+        const finesTotalSpan = document.getElementById('my-fines-total');
+
+        fetch(apiEndpoint, {
+            headers: {
+                'Authorization': `Bearer ${studentToken}`
+            }
+        })
+        .then(response => {
+            if (response.status === 401) {
+                localStorage.removeItem('studentUser');
+                localStorage.removeItem('studentToken');
+                window.location.href = 'student-login.html';
+                throw new Error('Unauthorized');
+            }
+            if (!response.ok) {
+                throw new Error('Failed to fetch fine records.');
+            }
+            return response.json();
+        })
+        .then(fines => {
+            console.log('[Student Dashboard] Fines loaded:', fines);
+            
+            let totalUnpaid = 0.0;
+            let unpaidCount = 0;
+            
+            finesTableBody.innerHTML = '';
+            
+            if (fines.length === 0) {
+                sectionFines.style.display = 'none';
+                unpaidAlert.style.display = 'none';
+                return;
+            }
+
+            sectionFines.style.display = 'block';
+
+            fines.forEach(fine => {
+                const isPaid = fine.status === 'paid';
+                if (!isPaid) {
+                    totalUnpaid += fine.fine_amount;
+                    unpaidCount++;
+                }
+
+                const row = document.createElement('tr');
+
+                // Format Dates
+                const dueDate = new Date(fine.due_time);
+                const formattedDueDate = dueDate.toLocaleDateString(undefined, {
+                    year: 'numeric', month: 'short', day: 'numeric', hour: '2-digit', minute: '2-digit'
+                });
+
+                let formattedReturnDate = '-';
+                if (fine.return_time) {
+                    const returnDate = new Date(fine.return_time);
+                    formattedReturnDate = returnDate.toLocaleDateString(undefined, {
+                        year: 'numeric', month: 'short', day: 'numeric', hour: '2-digit', minute: '2-digit'
+                    });
+                }
+
+                const statusClass = isPaid ? 'status-ok' : 'status-overdue';
+                const statusIcon = isPaid ? 'fa-circle-check' : 'fa-triangle-exclamation';
+                const statusText = isPaid ? 'Paid' : 'Unpaid';
+
+                row.innerHTML = `
+                    <td>
+                        <div style="font-weight: 500; color: var(--text-primary);">${fine.book_title}</div>
+                    </td>
+                    <td style="color: var(--text-muted); font-size: 13px;">${formattedDueDate}</td>
+                    <td style="color: var(--text-muted); font-size: 13px;">${formattedReturnDate}</td>
+                    <td style="font-weight: 600; color: ${isPaid ? 'var(--text-primary)' : '#ef4444'};">
+                        $${fine.fine_amount.toFixed(2)}
+                    </td>
+                    <td>
+                        <span class="status-badge ${statusClass}">
+                            <i class="fa-solid ${statusIcon}"></i> ${statusText}
+                        </span>
+                    </td>
+                `;
+                finesTableBody.appendChild(row);
+            });
+
+            // Update Fines Badge Total
+            finesTotalSpan.textContent = `Unpaid Fines: $${totalUnpaid.toFixed(2)}`;
+
+            // Toggle Alert Warning Banner
+            if (unpaidCount > 0) {
+                unpaidAlert.style.display = 'flex';
+                document.getElementById('fines-alert-message').textContent = 
+                    `You have ${unpaidCount} outstanding library fine(s) totaling $${totalUnpaid.toFixed(2)}. New checkouts are blocked until all fines are paid.`;
+            } else {
+                unpaidAlert.style.display = 'none';
+            }
+        })
+        .catch(error => {
+            console.error('[Student Dashboard] Fines fetch error:', error);
+        });
+    }
 
     /**
      * Fetches current student's active unreturned borrow logs from backend

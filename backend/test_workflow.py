@@ -21,6 +21,7 @@ class TestLibraryWorkflow(unittest.TestCase):
                 # We can drop tables and re-init to ensure a clean starting slate
                 conn = db_conn.conn
                 cursor = conn.cursor()
+                cursor.execute("DROP TABLE IF EXISTS fines;")
                 cursor.execute("DROP TABLE IF EXISTS transactions;")
                 cursor.execute("DROP TABLE IF EXISTS books;")
                 cursor.execute("DROP TABLE IF EXISTS users;")
@@ -206,6 +207,121 @@ class TestLibraryWorkflow(unittest.TestCase):
         self.assertEqual(reminders_data['reminders_sent'], 1)
         print(f"[PASS] Workflow D: Verified manual reminders trigger returned 200 and sent {reminders_data['reminders_sent']} reminder.")
         
+        # ----------------------------------------------------
+        # 5. Workflow E: Fines System (Overdue, Blocking, Payment)
+        # ----------------------------------------------------
+        # Step 5a: Seed an overdue checkout transaction (due 2 days ago)
+        with app.app_context():
+            db_conn = db.get_db()
+            with db_conn.cursor() as cursor:
+                cursor.execute("SELECT id FROM users WHERE roll_number = 'ST-2026-01';")
+                u_row = cursor.fetchone()
+                s_uid = u_row['id'] if isinstance(u_row, dict) else u_row[0]
+                
+                cursor.execute("SELECT id FROM books WHERE book_uid = 'BK-ALG-101';")
+                b_row = cursor.fetchone()
+                b_id = b_row['id'] if isinstance(b_row, dict) else b_row[0]
+                
+                # Make sure the book status is checked_out
+                cursor.execute("UPDATE books SET status = 'checked_out' WHERE id = %s;", (b_id,))
+                
+                # Clear transactions
+                cursor.execute("DELETE FROM transactions;")
+                cursor.execute("DELETE FROM fines;")
+                
+                # checkout 15.5 days ago, due 14 days later (due 1.5 days ago, rounds up to 2)
+                checkout_time = datetime.datetime.utcnow() - timedelta(days=15.5)
+                due_time = checkout_time + timedelta(days=14)
+                
+                cursor.execute(
+                    "INSERT INTO transactions (user_id, book_id, checkout_time, due_time, status) VALUES (%s, %s, %s, %s, 'active');",
+                    (s_uid, b_id, checkout_time, due_time)
+                )
+            db_conn.commit()
+        print("[PASS] Workflow E: Seeded overdue checkout transaction (due 2 days ago).")
+
+        # Step 5b: Admin processes return for the overdue book
+        return_payload = {
+            'book_id': 'BK-ALG-101'
+        }
+        response = self.client.post('/api/admin/return-book',
+                                    data=json.dumps(return_payload),
+                                    content_type='application/json',
+                                    headers={'Authorization': f'Bearer {admin_token}'})
+        self.assertEqual(response.status_code, 200)
+        return_data = json.loads(response.data)
+        self.assertTrue(return_data['overdue'])
+        self.assertEqual(return_data['days_overdue'], 2)
+        self.assertEqual(return_data['fine_amount'], 20.00)
+        print(f"[PASS] Workflow E: Processed return. Overdue fine calculated: ${return_data['fine_amount']} (Days late: {return_data['days_overdue']})")
+
+        # Step 5c: Fetch student fines
+        response = self.client.get(f'/api/student/fines/{student_id}',
+                                   headers={'Authorization': f'Bearer {student_token}'})
+        self.assertEqual(response.status_code, 200)
+        fines_list = json.loads(response.data)
+        self.assertEqual(len(fines_list), 1)
+        self.assertEqual(fines_list[0]['fine_amount'], 20.00)
+        self.assertEqual(fines_list[0]['status'], 'unpaid')
+        print("[PASS] Workflow E: Student retrieved fines list containing 1 unpaid fine of $20.00.")
+
+        # Step 5d: Student attempts to borrow a book - should be blocked!
+        # First obtain an encrypted QR token for BK-ALG-101 (which was just returned)
+        response = self.client.get('/api/books/pickup/BK-ALG-101')
+        self.assertEqual(response.status_code, 200)
+        book = json.loads(response.data)
+        encrypted_qr_token = book['encrypted_payload']
+
+        checkout_payload = {
+            'user_id': student_id,
+            'book_id': encrypted_qr_token
+        }
+        response = self.client.post('/api/student/checkout',
+                                    data=json.dumps(checkout_payload),
+                                    content_type='application/json',
+                                    headers={'Authorization': f'Bearer {student_token}'})
+        self.assertEqual(response.status_code, 403)
+        checkout_error = json.loads(response.data)
+        self.assertIn('Checkout blocked. You have outstanding unpaid library fines.', checkout_error['message'])
+        print("[PASS] Workflow E: Checkout blocked successfully due to unpaid fines.")
+
+        # Step 5e: Admin fetches all fines to collect the payment
+        response = self.client.get('/api/admin/fines',
+                                   headers={'Authorization': f'Bearer {admin_token}'})
+        self.assertEqual(response.status_code, 200)
+        all_fines = json.loads(response.data)
+        self.assertEqual(len(all_fines), 1)
+        fine_id = all_fines[0]['id']
+
+        # Step 5f: Admin collects fine payment
+        pay_payload = {
+            'fine_id': fine_id
+        }
+        response = self.client.post('/api/admin/pay-fine',
+                                    data=json.dumps(pay_payload),
+                                    content_type='application/json',
+                                    headers={'Authorization': f'Bearer {admin_token}'})
+        self.assertEqual(response.status_code, 200)
+        print(f"[PASS] Workflow E: Fine payment collected by admin for Fine ID {fine_id}.")
+
+        # Step 5g: Verify fine is marked as paid
+        response = self.client.get(f'/api/student/fines/{student_id}',
+                                   headers={'Authorization': f'Bearer {student_token}'})
+        self.assertEqual(response.status_code, 200)
+        fines_list_after = json.loads(response.data)
+        self.assertEqual(fines_list_after[0]['status'], 'paid')
+        print("[PASS] Workflow E: Verified fine status updated to 'paid'.")
+
+        # Step 5h: Student tries checkout again - should succeed now!
+        response = self.client.post('/api/student/checkout',
+                                    data=json.dumps(checkout_payload),
+                                    content_type='application/json',
+                                    headers={'Authorization': f'Bearer {student_token}'})
+        self.assertEqual(response.status_code, 200)
+        checkout_success = json.loads(response.data)
+        self.assertIn('Book Successfully Checked Out', checkout_success['message'])
+        print(f"[PASS] Workflow E: Book checked out successfully after paying fines.")
+
         print("--- Automated Library Workflow Test Completed Successfully ---\n")
 
 if __name__ == '__main__':

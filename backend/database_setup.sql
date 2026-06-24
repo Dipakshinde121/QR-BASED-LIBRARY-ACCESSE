@@ -11,6 +11,7 @@ USE `library_access_db`;
 
 -- Remove tables in reverse dependency order if they exist
 SET FOREIGN_KEY_CHECKS = 0;
+DROP TABLE IF EXISTS `fines`;
 DROP TABLE IF EXISTS `transactions`;
 DROP TABLE IF EXISTS `books`;
 DROP TABLE IF EXISTS `users`;
@@ -55,6 +56,17 @@ CREATE TABLE `transactions` (
   `status` ENUM('active', 'returned', 'overdue') NOT NULL DEFAULT 'active' COMMENT 'Current transaction status',
   CONSTRAINT `fk_transactions_user` FOREIGN KEY (`user_id`) REFERENCES `users` (`id`) ON DELETE CASCADE ON UPDATE CASCADE,
   CONSTRAINT `fk_transactions_book` FOREIGN KEY (`book_id`) REFERENCES `books` (`id`) ON DELETE CASCADE ON UPDATE CASCADE
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
+
+-- Table: fines (Stores overdue penalty records)
+CREATE TABLE `fines` (
+  `id` INT AUTO_INCREMENT PRIMARY KEY,
+  `transaction_id` INT NOT NULL COMMENT 'Foreign key to transactions table',
+  `fine_amount` DECIMAL(10,2) NOT NULL COMMENT 'Calculated overdue fine amount',
+  `status` ENUM('unpaid', 'paid') NOT NULL DEFAULT 'unpaid' COMMENT 'Fine payment status',
+  `created_at` TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+  `updated_at` TIMESTAMP DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
+  CONSTRAINT `fk_fines_transaction` FOREIGN KEY (`transaction_id`) REFERENCES `transactions` (`id`) ON DELETE CASCADE ON UPDATE CASCADE
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
 
 
