@@ -1,5 +1,5 @@
 import datetime
-from flask import Blueprint, jsonify, request
+from flask import Blueprint, jsonify, request, current_app
 from db import get_db
 from routes.auth import generate_token, token_required
 
@@ -221,6 +221,29 @@ def return_book():
 
         return jsonify({
             'message': 'Database return transaction failed.',
+            'error': str(error)
+        }), 500
+
+
+@admin_bp.route('/trigger-reminders', methods=['POST'])
+@token_required(role='admin')
+def trigger_reminders():
+    """
+    POST /api/admin/trigger-reminders
+    Manually triggers checking and dispatching due date reminders.
+    """
+    try:
+        from reminders import check_and_send_reminders
+        print("[Backend Admin] Manual reminders execution triggered.")
+        count = check_and_send_reminders(current_app)
+        return jsonify({
+            'message': 'Due-date reminders job executed successfully.',
+            'reminders_sent': count
+        }), 200
+    except Exception as error:
+        print("[Backend Admin] Error during manual reminders trigger:", str(error))
+        return jsonify({
+            'message': 'Failed to run manual reminders job.',
             'error': str(error)
         }), 500
 

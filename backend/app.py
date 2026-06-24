@@ -27,6 +27,10 @@ app.register_blueprint(books_bp, url_prefix='/api/books')
 app.register_blueprint(admin_bp, url_prefix='/api/admin')
 app.register_blueprint(student_bp, url_prefix='/api/student')
 
+# Start background due reminders scheduler
+import reminders
+reminders.init_scheduler(app)
+
 # Basic health check endpoint
 @app.route('/api/health', methods=['GET'])
 def health_check():

@@ -161,6 +161,50 @@ class TestLibraryWorkflow(unittest.TestCase):
         all_active_checkouts_after = json.loads(response.data)
         self.assertFalse(any(tx['id'] == transaction_id for tx in all_active_checkouts_after))
         print("[PASS] Workflow C: Verified transaction is cleared from active checkouts list.")
+
+        # ----------------------------------------------------
+        # 4. Workflow D: Background Reminder Jobs & Manual Trigger
+        # ----------------------------------------------------
+        # Step 4a: Let's create an active transaction that is due in 24 hours
+        import datetime
+        from datetime import timedelta
+        with app.app_context():
+            db_conn = db.get_db()
+            with db_conn.cursor() as cursor:
+                cursor.execute("SELECT id FROM users WHERE roll_number = 'ST-2026-01';")
+                u_row = cursor.fetchone()
+                s_uid = u_row['id'] if isinstance(u_row, dict) else u_row[0]
+                
+                cursor.execute("SELECT id FROM books WHERE book_uid = 'BK-ALG-101';")
+                b_row = cursor.fetchone()
+                b_id = b_row['id'] if isinstance(b_row, dict) else b_row[0]
+                
+                # Make sure the book is marked as checked_out
+                cursor.execute("UPDATE books SET status = 'checked_out' WHERE id = %s;", (b_id,))
+                
+                # Clear any existing transactions to prevent noise
+                cursor.execute("DELETE FROM transactions;")
+                
+                # Insert a transaction due in exactly 24 hours
+                checkout_time = datetime.datetime.utcnow()
+                due_time = checkout_time + timedelta(days=1)
+                
+                # Use %s, which gets translated to ? in SQLite wrapper
+                cursor.execute(
+                    "INSERT INTO transactions (user_id, book_id, checkout_time, due_time, status) VALUES (%s, %s, %s, %s, 'active');",
+                    (s_uid, b_id, checkout_time, due_time)
+                )
+            db_conn.commit()
+            
+        print("[PASS] Workflow D: Seeded active transaction due in 24 hours.")
+        
+        # Step 4b: Call POST /api/admin/trigger-reminders authenticated as admin
+        response = self.client.post('/api/admin/trigger-reminders',
+                                    headers={'Authorization': f'Bearer {admin_token}'})
+        self.assertEqual(response.status_code, 200)
+        reminders_data = json.loads(response.data)
+        self.assertEqual(reminders_data['reminders_sent'], 1)
+        print(f"[PASS] Workflow D: Verified manual reminders trigger returned 200 and sent {reminders_data['reminders_sent']} reminder.")
         
         print("--- Automated Library Workflow Test Completed Successfully ---\n")
 
