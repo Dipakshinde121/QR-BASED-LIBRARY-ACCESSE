@@ -79,7 +79,8 @@ def get_db():
                 user=os.getenv('DB_USER', 'root'),
                 password=os.getenv('DB_PASSWORD', ''),
                 database=os.getenv('DB_NAME', 'library_access_db'),
-                cursorclass=pymysql.cursors.DictCursor
+                cursorclass=pymysql.cursors.DictCursor,
+                connect_timeout=1
             )
             print("[Database] Successfully connected to MySQL database.")
         except Exception as e:

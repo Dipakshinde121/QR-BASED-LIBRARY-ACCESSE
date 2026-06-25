@@ -152,11 +152,12 @@ Logs overdue penalty amounts and collection status.
 *   **Day 23 (CSV Exporter):** Implemented admin transactions exporter. Admins can click "Download Report" to download a full CSV log.
 *   **Day 24 (WebSockets Live Sync):** Integrated Flask-SocketIO. Admin dashboard updates checkouts, inventory, fines, and analytics in real-time when checkout or return commits occur.
 *   **Day 25 & 26 (CSS Modularization & Refactoring):** Split the massive `style.css` stylesheet into four component sheets inside a dedicated `css/` directory. Linked them via imports back into the main `style.css` to clean up technical styling debt.
+*   **Day 27 (Backend Unit Testing):** Installed pytest and created comprehensive route unit tests (`backend/test_routes.py`) validating API health checks, student login credentials checking, QR payload encryption, checkout fine blocking restrictions, double checkout prevention, and transactional rollback stability under database operational conflicts.
 
 ### Current Implementation State (Where we are now)
 
-*   **Current State:** Phase 6 (Admin Analytics & Tooling) and Phase 6 CSS Modularization are fully completed and verified locally using integration test suites.
-*   **Next Milestone:** **Day 27: Backend Unit Testing**.
+*   **Current State:** Phase 6 and Day 27: Backend Unit Testing are fully completed and verified locally using pytest.
+*   **Next Milestone:** **Day 28: UI/UX Styling Refinements & User Feedback Loops**.
 
 ---
 
