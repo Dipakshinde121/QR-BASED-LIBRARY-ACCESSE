@@ -1,0 +1,234 @@
+/* components.css - Custom UI Components (QR Containers, Scanning Lasers, Info Cards, and Toast Systems) */
+
+/* QR Code Section & Placeholder */
+.qr-section {
+    display: flex;
+    justify-content: center;
+    align-items: center;
+}
+
+.qr-card-container {
+    width: 100%;
+    max-width: 260px;
+    aspect-ratio: 1;
+    position: relative;
+    border-radius: 16px;
+    padding: 1px;
+    background: linear-gradient(135deg, var(--card-border), rgba(255, 255, 255, 0.05));
+    overflow: hidden;
+}
+
+.qr-placeholder {
+    width: 100%;
+    height: 100%;
+    background: var(--bg-primary);
+    border: 1px dashed var(--card-border);
+    border-radius: 15px;
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    padding: 20px;
+    text-align: center;
+    position: relative;
+    transition: var(--transition-smooth);
+}
+
+.qr-inner-content {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    gap: 8px;
+    transition: var(--transition-smooth);
+}
+
+.qr-icon {
+    font-size: 40px;
+    color: var(--accent-purple);
+    opacity: 0.7;
+    animation: iconPulse 3s infinite ease-in-out;
+}
+
+.qr-placeholder-text {
+    font-size: 14px;
+    font-weight: 600;
+    color: var(--text-primary);
+}
+
+.qr-placeholder-subtext {
+    font-size: 11px;
+    color: var(--text-muted);
+    line-height: 1.4;
+    max-width: 180px;
+}
+
+@keyframes iconPulse {
+    0%, 100% {
+        transform: scale(1);
+        filter: drop-shadow(0 0 2px rgba(167, 139, 250, 0));
+        opacity: 0.7;
+    }
+    50% {
+        transform: scale(1.05);
+        filter: drop-shadow(0 0 8px rgba(167, 139, 250, 0.5));
+        opacity: 0.9;
+    }
+}
+
+/* Scanner laser overlay */
+.scanner-laser {
+    position: absolute;
+    top: 0;
+    left: 0;
+    right: 0;
+    height: 2px;
+    background: linear-gradient(90deg, transparent, var(--accent-cyan), transparent);
+    box-shadow: 0 0 10px var(--accent-cyan);
+    z-index: 2;
+    pointer-events: none;
+    opacity: 0;
+    transition: opacity 0.3s ease;
+}
+
+.scanning .scanner-laser {
+    opacity: 1;
+    animation: laserScan 2.5s infinite linear;
+}
+
+@keyframes laserScan {
+    0% { top: 0%; }
+    50% { top: 100%; }
+    100% { top: 0%; }
+}
+
+/* Dynamic State Styling */
+.qr-card-container.success {
+    background: linear-gradient(135deg, var(--accent-cyan), var(--accent-purple));
+    box-shadow: 0 10px 25px rgba(6, 182, 212, 0.2);
+}
+
+.qr-card-container.success .qr-placeholder {
+    border: none;
+    background: var(--bg-primary);
+}
+
+.success-number {
+    font-family: monospace;
+    font-size: 15px;
+    font-weight: 700;
+    color: var(--accent-cyan);
+    padding: 4px 10px;
+    background-color: rgba(34, 211, 238, 0.06);
+    border-radius: 6px;
+    border: 1px solid rgba(34, 211, 238, 0.15);
+    margin-top: 5px;
+    display: inline-block;
+    letter-spacing: 0.5px;
+}
+
+/* Dynamic Book Info card styling */
+.book-info-card {
+    background: var(--bg-primary);
+    border: 1px solid var(--card-border);
+    border-radius: var(--border-radius-md);
+    padding: 14px 18px;
+    margin-bottom: 20px;
+    text-align: center;
+    transition: var(--transition-smooth);
+    animation: slideDownFadeIn 0.4s cubic-bezier(0.4, 0, 0.2, 1);
+}
+
+.book-info-card h3 {
+    font-size: 16px;
+    font-weight: 600;
+    color: var(--accent-cyan);
+    margin-bottom: 2px;
+}
+
+.book-info-card p {
+    font-size: 13px;
+    color: var(--text-muted);
+    margin-bottom: 8px;
+}
+
+.info-badge {
+    display: inline-flex;
+    align-items: center;
+    gap: 4px;
+    background: rgba(34, 211, 238, 0.05);
+    border: 1px solid rgba(34, 211, 238, 0.15);
+    color: var(--accent-cyan);
+    padding: 4px 10px;
+    border-radius: 16px;
+    font-size: 11px;
+    font-weight: 500;
+}
+
+@keyframes slideDownFadeIn {
+    from {
+        opacity: 0;
+        transform: translateY(-10px);
+    }
+    to {
+        opacity: 1;
+        transform: translateY(0);
+    }
+}
+
+/* ====================================================================
+   Toast Notification System (Premium Design)
+   ==================================================================== */
+.toast-container {
+    position: fixed;
+    top: 24px;
+    right: 24px;
+    z-index: 9999;
+    display: flex;
+    flex-direction: column;
+    gap: 10px;
+    pointer-events: none;
+    max-width: 360px;
+    width: calc(100% - 48px);
+}
+
+.toast {
+    display: flex;
+    align-items: center;
+    gap: 12px;
+    background: #18181b;
+    border: 1px solid var(--card-border);
+    padding: 14px 18px;
+    border-radius: var(--border-radius-md);
+    box-shadow: 0 10px 25px rgba(0, 0, 0, 0.3);
+    font-weight: 500;
+    font-size: 13px;
+    color: var(--text-primary);
+    transform: translateY(-10px) scale(0.98);
+    opacity: 0;
+    transition: all 0.25s cubic-bezier(0.34, 1.56, 0.64, 1);
+    pointer-events: auto;
+    border-left: 4px solid var(--card-border);
+}
+
+.toast.toast-success {
+    border-left-color: #10b981;
+}
+
+.toast.toast-error {
+    border-left-color: #ef4444;
+}
+
+.toast.toast-show {
+    transform: translateY(0) scale(1);
+    opacity: 1;
+}
+
+.toast.toast-hide {
+    transform: translateY(-10px) scale(0.98);
+    opacity: 0;
+}
+
+.toast-message {
+    flex: 1;
+    line-height: 1.4;
+}

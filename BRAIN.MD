@@ -53,11 +53,17 @@ QR-BASED-LIBRARY-ACCESSE/
 │
 └── frontend/                 # Client-side static portal
     ├── index.html            # General landing index portal
-    ├── style.css             # Unified dark glassmorphic design system styles
+    ├── style.css             # Unified entry stylesheet linking component sheets
     ├── config.js             # API base URL configuration mappings
     ├── icon.svg              # Vector logo (PWA application icon)
     ├── manifest.json         # PWA metadata configuration file
     ├── sw.js                 # Service worker offline caching logic
+    │
+    ├── css/                  # Component-based modular stylesheets
+    │   ├── base.css          # Design system variables, global resets, body styles
+    │   ├── forms.css         # Form wrappers, labels, text inputs, buttons
+    │   ├── tables.css        # Table matrices, columns, status badges
+    │   └── components.css    # QR cards, laser overlays, book badges, toasts
     │
     ├── student-login.html    # Student authorization gate
     ├── student-dashboard.html# Student scanner viewport
@@ -135,7 +141,7 @@ Logs overdue penalty amounts and collection status.
 
 ## 5. Development Log & Implementation State
 
-### Day 17 to Day 24 Completed Log
+### Day 17 to Day 26 Completed Log
 
 *   **Day 17 (JWT Auth):** Implemented JWT token generation on user login. Protected backend routes with `@token_required` decorators.
 *   **Day 18 (Encrypted QR):** Added Fernet AES symmetric encryption to sign kiosk QR payloads, ensuring QRs cannot be forged or tampered with.
@@ -145,11 +151,12 @@ Logs overdue penalty amounts and collection status.
 *   **Day 22 (Visual Analytics):** Integrated Chart.js to render a horizontal purple gradient bar chart for "Most Borrowed Books" and a smooth cyan line chart representing "Peak Checkout Hours".
 *   **Day 23 (CSV Exporter):** Implemented admin transactions exporter. Admins can click "Download Report" to download a full CSV log.
 *   **Day 24 (WebSockets Live Sync):** Integrated Flask-SocketIO. Admin dashboard updates checkouts, inventory, fines, and analytics in real-time when checkout or return commits occur.
+*   **Day 25 & 26 (CSS Modularization & Refactoring):** Split the massive `style.css` stylesheet into four component sheets inside a dedicated `css/` directory. Linked them via imports back into the main `style.css` to clean up technical styling debt.
 
 ### Current Implementation State (Where we are now)
 
-*   **Current State:** Phase 6 (Admin Analytics & Tooling) is fully implemented. Day 24 (WebSockets Live Sync) has been successfully verified using SocketIO test clients and pushed to GitHub.
-*   **Next Milestone:** **Day 25 & 26: Code Refactoring & Modularization**.
+*   **Current State:** Phase 6 (Admin Analytics & Tooling) and Phase 6 CSS Modularization are fully completed and verified locally using integration test suites.
+*   **Next Milestone:** **Day 27: Backend Unit Testing**.
 
 ---
 

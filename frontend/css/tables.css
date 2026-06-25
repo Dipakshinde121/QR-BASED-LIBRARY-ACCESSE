@@ -1,0 +1,84 @@
+/* tables.css - Dashboard Table grids and Status/Overdue Badges Styles */
+
+.table-container {
+    background: var(--card-bg);
+    border: 1px solid var(--card-border);
+    border-radius: var(--border-radius-md);
+    overflow: hidden;
+}
+
+.table-container table {
+    width: 100%;
+    border-collapse: collapse;
+    text-align: left;
+}
+
+.table-container th {
+    background: #111113; /* slightly darker zinc */
+    color: var(--text-muted);
+    font-size: 11px;
+    font-weight: 600;
+    text-transform: uppercase;
+    letter-spacing: 0.05em;
+    border-bottom: 1px solid var(--card-border);
+    padding: 12px 18px;
+}
+
+.table-container td {
+    padding: 14px 18px;
+    border-bottom: 1px solid var(--card-border);
+    color: var(--text-primary);
+}
+
+.table-container tr:last-child td {
+    border-bottom: none;
+}
+
+.table-container tbody tr {
+    transition: var(--transition-smooth);
+}
+
+.table-container tbody tr:hover {
+    background: rgba(255, 255, 255, 0.015);
+}
+
+/* Status Badges */
+.status-badge {
+    display: inline-flex;
+    align-items: center;
+    gap: 5px;
+    padding: 4px 8px;
+    border-radius: 6px;
+    font-size: 10px;
+    font-weight: 600;
+    text-transform: uppercase;
+    letter-spacing: 0.05em;
+}
+
+.status-badge i {
+    font-size: 8px;
+}
+
+.status-available, .status-ok {
+    background: rgba(16, 185, 129, 0.06);
+    border: 1px solid rgba(16, 185, 129, 0.15);
+    color: #34d399;
+}
+
+.status-checked_out {
+    background: rgba(139, 92, 246, 0.06);
+    border: 1px solid rgba(139, 92, 246, 0.15);
+    color: #c084fc;
+}
+
+.status-maintenance, .status-warning {
+    background: rgba(245, 158, 11, 0.06);
+    border: 1px solid rgba(245, 158, 11, 0.15);
+    color: #fbbf24;
+}
+
+.status-overdue {
+    background: rgba(239, 68, 68, 0.06);
+    border: 1px solid rgba(239, 68, 68, 0.15);
+    color: #f87171;
+}
