@@ -36,6 +36,7 @@ QR-BASED-LIBRARY-ACCESSE/
 ├── Dockerfile                # Docker execution wrapper configurations
 ├── README.md                 # Brief onboarding introduction
 ├── BRAIN.MD                  # Centralized system documentation & roadmap log (this file)
+├── PORTFOLIO_CASE_STUDY.md   # Architectural breakdown, resume descriptions, and launch templates
 │
 ├── backend/                  # Server-side API source
 │   ├── app.py                # Main application entry point & blueprint registration
