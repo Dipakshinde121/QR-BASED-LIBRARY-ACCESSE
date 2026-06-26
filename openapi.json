@@ -1,0 +1,728 @@
+{
+  "openapi": "3.0.3",
+  "info": {
+    "title": "QR-Based Library Access & Management System API",
+    "description": "Complete REST API documentation for the QR-Based Library Access & Management System backend. Provides routes for student/admin JWT authentication, secure AES-encrypted QR pick-up token generation, checkout scanning verification, automated daily due reminders, fine tracking and collections, and visual analytics reports.",
+    "version": "1.0.0"
+  },
+  "servers": [
+    {
+      "url": "http://localhost:5000",
+      "description": "Local development API server"
+    }
+  ],
+  "components": {
+    "securitySchemes": {
+      "bearerAuth": {
+        "type": "http",
+        "scheme": "bearer",
+        "bearerFormat": "JWT",
+        "description": "Provide the JWT token in the format: `Bearer <JWT_TOKEN>`"
+      }
+    }
+  },
+  "paths": {
+    "/api/health": {
+      "get": {
+        "summary": "Health Check Status",
+        "description": "Checks backend API and database connection availability, returning fallback state if database connection fails.",
+        "responses": {
+          "200": {
+            "description": "System is healthy and online.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "status": { "type": "string", "example": "UP" },
+                    "message": { "type": "string", "example": "Library Kiosk API is running smoothly." },
+                    "timestamp": { "type": "string", "format": "date-time", "example": "2026-06-26T01:55:17.000Z" }
+                  }
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/student/login": {
+      "post": {
+        "summary": "Student Account Authentication",
+        "description": "Verifies student credentials and issues a signed JWT token valid for 2 hours.",
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "type": "object",
+                "properties": {
+                  "roll_number": { "type": "string", "example": "ST-2026-01" },
+                  "password": { "type": "string", "example": "hello" }
+                },
+                "required": ["roll_number", "password"]
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "Authentication successful.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "message": { "type": "string", "example": "Login successful!" },
+                    "token": { "type": "string", "example": "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9..." },
+                    "user": {
+                      "type": "object",
+                      "properties": {
+                        "id": { "type": "integer", "example": 2 },
+                        "name": { "type": "string", "example": "Satyam Kumar" },
+                        "roll_number": { "type": "string", "example": "ST-2026-01" },
+                        "role": { "type": "string", "example": "student" }
+                      }
+                    }
+                  }
+                }
+              }
+            }
+          },
+          "400": {
+            "description": "Missing credentials payload details."
+          },
+          "401": {
+            "description": "Invalid credentials or non-student user roll number."
+          },
+          "500": {
+            "description": "Database operational error."
+          }
+        }
+      }
+    },
+    "/api/admin/login": {
+      "post": {
+        "summary": "Administrator Authentication",
+        "description": "Validates administrator credentials and issues a signed JWT token.",
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "type": "object",
+                "properties": {
+                  "email": { "type": "string", "example": "admin@library.com" },
+                  "password": { "type": "string", "example": "hello" }
+                },
+                "required": ["email", "password"]
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "Admin login successful.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "message": { "type": "string", "example": "Login successful!" },
+                    "token": { "type": "string", "example": "eyJhbGciOiJIUzI1Ni..." },
+                    "user": {
+                      "type": "object",
+                      "properties": {
+                        "id": { "type": "integer", "example": 1 },
+                        "name": { "type": "string", "example": "Library Admin" },
+                        "email": { "type": "string", "example": "admin@library.com" },
+                        "role": { "type": "string", "example": "admin" }
+                      }
+                    }
+                  }
+                }
+              }
+            }
+          },
+          "400": {
+            "description": "Missing parameters."
+          },
+          "401": {
+            "description": "Invalid password or non-admin account credentials."
+          },
+          "500": {
+            "description": "Database query error."
+          }
+        }
+      }
+    },
+    "/api/books/pickup/{book_uid}": {
+      "get": {
+        "summary": "Fetch Book Details & Generate Encrypted QR Payload",
+        "description": "Retrieves public details of a physical book by its unique code, and outputs a secure Fernet 256-bit AES encrypted token string containing the book UID and timestamp to build kiosk checkout QR codes.",
+        "parameters": [
+          {
+            "name": "book_uid",
+            "in": "path",
+            "required": true,
+            "description": "Unique catalog identity code of the physical book.",
+            "schema": { "type": "string", "example": "BK-ALG-101" }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Book details retrieved and payload encrypted successfully.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "id": { "type": "integer", "example": 1 },
+                    "book_uid": { "type": "string", "example": "BK-ALG-101" },
+                    "title": { "type": "string", "example": "Introduction to Algorithms" },
+                    "author": { "type": "string", "example": "Thomas H. Cormen" },
+                    "slot_location": { "type": "string", "example": "Row 1, Shelf A" },
+                    "status": { "type": "string", "example": "available" },
+                    "encrypted_payload": { "type": "string", "example": "gAAAAABm_rYk..." }
+                  }
+                }
+              }
+            }
+          },
+          "404": {
+            "description": "Book UID not found."
+          },
+          "500": {
+            "description": "Encryption configuration error or database issue."
+          }
+        }
+      }
+    },
+    "/api/books/available": {
+      "get": {
+        "summary": "Get Available Books Catalog",
+        "description": "Retrieves list of all library books currently available for student borrowing.",
+        "responses": {
+          "200": {
+            "description": "Catalog returned successfully.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "array",
+                  "items": {
+                    "type": "object",
+                    "properties": {
+                      "id": { "type": "integer", "example": 1 },
+                      "book_uid": { "type": "string", "example": "BK-ALG-101" },
+                      "title": { "type": "string", "example": "Introduction to Algorithms" },
+                      "author": { "type": "string", "example": "Thomas H. Cormen" },
+                      "slot_location": { "type": "string", "example": "Row 1, Shelf A" },
+                      "status": { "type": "string", "example": "available" }
+                    }
+                  }
+                }
+              }
+            }
+          },
+          "500": {
+            "description": "Database query error."
+          }
+        }
+      }
+    },
+    "/api/student/checkout": {
+      "post": {
+        "summary": "Process Student QR Checkout Scan",
+        "description": "Decrypts scanned QR tokens, verifies student fine standings, updates book availability to `checked_out`, and inserts checkout transaction logs. Emits `checkout_update` synchronization events via Socket.IO.",
+        "security": [
+          { "bearerAuth": [] }
+        ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "type": "object",
+                "properties": {
+                  "user_id": { "type": "integer", "example": 2 },
+                  "book_id": { "type": "string", "description": "Can be the raw book UID, database primary key ID, or the secure Fernet encrypted QR token string.", "example": "gAAAAABm_rYk..." }
+                },
+                "required": ["user_id", "book_id"]
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "Book checked out successfully.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "message": { "type": "string", "example": "Book Successfully Checked Out!" },
+                    "book": {
+                      "type": "object",
+                      "properties": {
+                        "id": { "type": "integer", "example": 1 },
+                        "book_uid": { "type": "string", "example": "BK-ALG-101" },
+                        "title": { "type": "string", "example": "Introduction to Algorithms" }
+                      }
+                    }
+                  }
+                }
+              }
+            }
+          },
+          "400": {
+            "description": "Book is already checked out or undergoing maintenance."
+          },
+          "403": {
+            "description": "Access denied due to outstanding unpaid library fines, or user ID context authorization mismatch."
+          },
+          "404": {
+            "description": "Book UID or student user account not found."
+          },
+          "500": {
+            "description": "Database transaction failure. Changes rolled back automatically."
+          }
+        }
+      }
+    },
+    "/api/student/active-checkouts/{student_id}": {
+      "get": {
+        "summary": "Get Student's Active Checkouts",
+        "description": "Fetches checkout entries for books currently in the student's physical possession.",
+        "security": [
+          { "bearerAuth": [] }
+        ],
+        "parameters": [
+          {
+            "name": "student_id",
+            "in": "path",
+            "required": true,
+            "description": "Database primary key ID of the student user.",
+            "schema": { "type": "integer", "example": 2 }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Active checkouts retrieved successfully.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "array",
+                  "items": {
+                    "type": "object",
+                    "properties": {
+                      "id": { "type": "integer", "example": 12 },
+                      "checkout_time": { "type": "string", "format": "date-time", "example": "2026-06-26T01:55:17.000Z" },
+                      "due_time": { "type": "string", "format": "date-time", "example": "2026-07-10T01:55:17.000Z" },
+                      "status": { "type": "string", "example": "active" },
+                      "book_title": { "type": "string", "example": "Introduction to Algorithms" },
+                      "book_uid": { "type": "string", "example": "BK-ALG-101" },
+                      "slot_location": { "type": "string", "example": "Row 1, Shelf A" }
+                    }
+                  }
+                }
+              }
+            }
+          },
+          "403": {
+            "description": "Access denied. Access token sub claims do not match requested student_id parameter."
+          },
+          "500": {
+            "description": "Database lookup failure."
+          }
+        }
+      }
+    },
+    "/api/student/fines/{student_id}": {
+      "get": {
+        "summary": "Get Student's Fine Assessment Ledger",
+        "description": "Retrieves active unpaid and past paid library fines assigned to the student's transactions.",
+        "security": [
+          { "bearerAuth": [] }
+        ],
+        "parameters": [
+          {
+            "name": "student_id",
+            "in": "path",
+            "required": true,
+            "description": "Database primary key ID of the student.",
+            "schema": { "type": "integer", "example": 2 }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Fine log history compiled successfully.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "array",
+                  "items": {
+                    "type": "object",
+                    "properties": {
+                      "id": { "type": "integer", "example": 4 },
+                      "fine_amount": { "type": "number", "example": 20.00 },
+                      "status": { "type": "string", "example": "unpaid" },
+                      "created_at": { "type": "string", "format": "date-time", "example": "2026-06-26T01:55:17.000Z" },
+                      "book_title": { "type": "string", "example": "Clean Code" },
+                      "due_time": { "type": "string", "format": "date-time", "example": "2026-06-24T01:55:17.000Z" },
+                      "return_time": { "type": "string", "format": "date-time", "example": "2026-06-26T01:55:17.000Z" }
+                    }
+                  }
+                }
+              }
+            }
+          },
+          "403": {
+            "description": "Access denied. Student user ID mismatch."
+          },
+          "500": {
+            "description": "Database query failure."
+          }
+        }
+      }
+    },
+    "/api/admin/inventory": {
+      "get": {
+        "summary": "Get Complete Inventory Catalog Statuses",
+        "description": "Provides administrators with list of all books, layout locations, and current availability status.",
+        "security": [
+          { "bearerAuth": [] }
+        ],
+        "responses": {
+          "200": {
+            "description": "Library inventory logs returned successfully.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "array",
+                  "items": {
+                    "type": "object",
+                    "properties": {
+                      "id": { "type": "integer", "example": 1 },
+                      "book_uid": { "type": "string", "example": "BK-ALG-101" },
+                      "title": { "type": "string", "example": "Introduction to Algorithms" },
+                      "author": { "type": "string", "example": "Thomas H. Cormen" },
+                      "slot_location": { "type": "string", "example": "Row 1, Shelf A" },
+                      "status": { "type": "string", "example": "available" }
+                    }
+                  }
+                }
+              }
+            }
+          },
+          "403": {
+            "description": "Access denied. Admin role required."
+          },
+          "500": {
+            "description": "Database failure."
+          }
+        }
+      }
+    },
+    "/api/admin/active-checkouts": {
+      "get": {
+        "summary": "Get Active Library Checkouts",
+        "description": "Compiles list of all checked-out books along with borrower details and due dates.",
+        "security": [
+          { "bearerAuth": [] }
+        ],
+        "responses": {
+          "200": {
+            "description": "Active checkout transactions returned.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "array",
+                  "items": {
+                    "type": "object",
+                    "properties": {
+                      "id": { "type": "integer", "example": 1 },
+                      "checkout_time": { "type": "string", "format": "date-time", "example": "2026-06-25T12:00:00.000Z" },
+                      "due_time": { "type": "string", "format": "date-time", "example": "2026-07-09T12:00:00.000Z" },
+                      "status": { "type": "string", "example": "active" },
+                      "student_name": { "type": "string", "example": "Satyam Kumar" },
+                      "student_roll": { "type": "string", "example": "ST-2026-01" },
+                      "book_title": { "type": "string", "example": "Introduction to Algorithms" },
+                      "book_uid": { "type": "string", "example": "BK-ALG-101" }
+                    }
+                  }
+                }
+              }
+            }
+          },
+          "403": {
+            "description": "Access denied. Admin role required."
+          },
+          "500": {
+            "description": "Database selection error."
+          }
+        }
+      }
+    },
+    "/api/admin/return-book": {
+      "post": {
+        "summary": "Register Return & Calculate Fines",
+        "description": "Registers return checklist completion, calculates days overdue ($10 per day fine rate), sets book availability status back to `available`, and logs penalty fines. Broadcasts a `return_update` sync event via Socket.IO.",
+        "security": [
+          { "bearerAuth": [] }
+        ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "type": "object",
+                "properties": {
+                  "transaction_id": { "type": "integer", "description": "Database ID of the transaction to resolve.", "example": 1 },
+                  "book_id": { "type": "string", "description": "Alternative key. Can be database book ID or custom book UID code to resolve active transaction.", "example": "BK-ALG-101" }
+                }
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "Book returned and fines calculated successfully.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "message": { "type": "string", "example": "Book successfully returned." },
+                    "transaction_id": { "type": "integer", "example": 1 },
+                    "book_id": { "type": "integer", "example": 1 },
+                    "overdue": { "type": "boolean", "example": true },
+                    "days_overdue": { "type": "integer", "example": 2 },
+                    "fine_amount": { "type": "number", "example": 20.00 }
+                  }
+                }
+              }
+            }
+          },
+          "400": {
+            "description": "Transaction already marked as returned, or no lookup parameters supplied."
+          },
+          "403": {
+            "description": "Access denied. Admin role required."
+          },
+          "404": {
+            "description": "No active loan record transaction resolved."
+          },
+          "500": {
+            "description": "Database transaction failure. Changes rolled back."
+          }
+        }
+      }
+    },
+    "/api/admin/trigger-reminders": {
+      "post": {
+        "summary": "Manually Run Reminder Scheduler Job",
+        "description": "Instantly triggers due checks on database transaction states for loans due in 24 hours, sending SendGrid API or local mock console notifications.",
+        "security": [
+          { "bearerAuth": [] }
+        ],
+        "responses": {
+          "200": {
+            "description": "Reminders compiled and dispatched.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "message": { "type": "string", "example": "Due-date reminders job executed successfully." },
+                    "reminders_sent": { "type": "integer", "example": 1 }
+                  }
+                }
+              }
+            }
+          },
+          "403": {
+            "description": "Access denied. Admin role required."
+          },
+          "500": {
+            "description": "Reminders job runtime execution error."
+          }
+        }
+      }
+    },
+    "/api/admin/fines": {
+      "get": {
+        "summary": "Get Master Library Fines Log",
+        "description": "Compiles master history of overdue fines assessed across all system student borrowers.",
+        "security": [
+          { "bearerAuth": [] }
+        ],
+        "responses": {
+          "200": {
+            "description": "Fine history matrix returned successfully.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "array",
+                  "items": {
+                    "type": "object",
+                    "properties": {
+                      "id": { "type": "integer", "example": 1 },
+                      "fine_amount": { "type": "number", "example": 20.00 },
+                      "status": { "type": "string", "example": "unpaid" },
+                      "created_at": { "type": "string", "format": "date-time", "example": "2026-06-25T12:00:00.000Z" },
+                      "student_name": { "type": "string", "example": "Satyam Kumar" },
+                      "student_roll": { "type": "string", "example": "ST-2026-01" },
+                      "book_title": { "type": "string", "example": "Introduction to Algorithms" },
+                      "due_time": { "type": "string", "format": "date-time", "example": "2026-06-23T12:00:00.000Z" },
+                      "return_time": { "type": "string", "format": "date-time", "example": "2026-06-25T12:00:00.000Z" }
+                    }
+                  }
+                }
+              }
+            }
+          },
+          "403": {
+            "description": "Access denied. Admin role required."
+          },
+          "500": {
+            "description": "Database query error."
+          }
+        }
+      }
+    },
+    "/api/admin/pay-fine": {
+      "post": {
+        "summary": "Mark Fine Record as Paid",
+        "description": "Processes penalty collection and updates outstanding library fine status details to `paid` to clear student checkout blocks.",
+        "security": [
+          { "bearerAuth": [] }
+        ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "type": "object",
+                "properties": {
+                  "fine_id": { "type": "integer", "example": 1 }
+                },
+                "required": ["fine_id"]
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "Fine cleared successfully.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "message": { "type": "string", "example": "Fine marked as paid successfully." },
+                    "fine_id": { "type": "integer", "example": 1 }
+                  }
+                }
+              }
+            }
+          },
+          "400": {
+            "description": "Fine record is already marked as paid."
+          },
+          "403": {
+            "description": "Access denied. Admin role required."
+          },
+          "404": {
+            "description": "Fine ID not found in database records."
+          },
+          "500": {
+            "description": "Database transaction query failure."
+          }
+        }
+      }
+    },
+    "/api/admin/statistics": {
+      "get": {
+        "summary": "Get Library Dashboard Analytical Statistics",
+        "description": "Computes active loan metrics, fine balance sums, peak borrowing hourly distributions, and top checked-out titles for rendering visual dashboard charts.",
+        "security": [
+          { "bearerAuth": [] }
+        ],
+        "responses": {
+          "200": {
+            "description": "Analytical statistics compiled successfully.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "summary": {
+                      "type": "object",
+                      "properties": {
+                        "total_students": { "type": "integer", "example": 4 },
+                        "total_books": { "type": "integer", "example": 11 },
+                        "active_checkouts": { "type": "integer", "example": 1 },
+                        "total_fines_unpaid": { "type": "number", "example": 20.00 },
+                        "total_fines_paid": { "type": "number", "example": 0.00 }
+                      }
+                    },
+                    "most_borrowed": {
+                      "type": "array",
+                      "items": {
+                        "type": "object",
+                        "properties": {
+                          "title": { "type": "string", "example": "Introduction to Algorithms" },
+                          "count": { "type": "integer", "example": 5 }
+                        }
+                      }
+                    },
+                    "hourly_checkouts": {
+                      "type": "object",
+                      "additionalProperties": {
+                        "type": "integer"
+                      },
+                      "example": { "00": 0, "08": 0, "12": 3, "15": 1, "23": 0 }
+                    }
+                  }
+                }
+              }
+            }
+          },
+          "403": {
+            "description": "Access denied. Admin role required."
+          },
+          "500": {
+            "description": "Database analytics querying failed."
+          }
+        }
+      }
+    },
+    "/api/admin/transactions/export": {
+      "get": {
+        "summary": "Download Complete Transaction History (CSV)",
+        "description": "Compiles all transactions, checkouts, return dates, and fine balances into a download-forced CSV stream report file.",
+        "security": [
+          { "bearerAuth": [] }
+        ],
+        "responses": {
+          "200": {
+            "description": "CSV byte-stream return payload file generated successfully.",
+            "content": {
+              "text/csv": {
+                "schema": {
+                  "type": "string",
+                  "example": "Transaction ID,Student Name,Student Roll Number,Student Email,Book Title,Book UID,Checkout Time,Due Time,Return Time,Transaction Status,Fine Amount,Fine Status\n1,Satyam Kumar,ST-2026-01,satyam@library.com,Introduction to Algorithms,BK-ALG-101,2026-06-25T12:00:00,2026-07-09T12:00:00,N/A,ACTIVE,$0.00,NONE"
+                }
+              }
+            }
+          },
+          "403": {
+            "description": "Access denied. Admin role required."
+          },
+          "500": {
+            "description": "CSV serialization or database error."
+          }
+        }
+      }
+    }
+  }
+}
