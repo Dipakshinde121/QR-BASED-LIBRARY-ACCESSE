@@ -1,8 +1,8 @@
 document.addEventListener('DOMContentLoaded', () => {
-    const loginForm = document.getElementById('login-form');
+    const loginForm = document.getElementById('admin-login-form');
     const emailInput = document.getElementById('admin-email');
     const passwordInput = document.getElementById('admin-password');
-    const submitBtn = document.getElementById('login-btn');
+    const submitBtn = document.getElementById('admin-login-btn');
 
     // Handle Form Submission
     loginForm.addEventListener('submit', (e) => {

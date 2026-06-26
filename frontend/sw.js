@@ -1,6 +1,6 @@
 const CACHE_NAME = 'library-kiosk-student-v1';
 const ASSETS_TO_CACHE = [
-  './student-login.html',
+  './index.html',
   './student-dashboard.html',
   './style.css',
   './student.js',

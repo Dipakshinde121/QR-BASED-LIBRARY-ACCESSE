@@ -58,21 +58,7 @@
             <!-- Main Dashboard Layout -->
             <div style="display: grid; grid-template-columns: 1fr; gap: 30px; width: 100%;">
                 
-                <!-- Main Action Area: Scan QR Code -->
-                <section class="action-card" style="background: var(--bg-primary); border: 1px solid var(--card-border); border-radius: var(--border-radius-md); padding: 30px; text-align: center; display: flex; flex-direction: column; align-items: center; justify-content: center; gap: 20px; box-shadow: inset 0 2px 4px rgba(0,0,0,0.01);">
-                    <div class="qr-icon-wrapper" style="width: 80px; height: 80px; border-radius: 50%; background: rgba(109, 40, 217, 0.08); display: flex; align-items: center; justify-content: center; border: 1.5px dashed rgba(109, 40, 217, 0.3); animation: pulseGlowScan 3s infinite alternate ease-in-out;">
-                        <i class="fa-solid fa-qrcode" style="font-size: 40px; color: var(--accent-purple);"></i>
-                    </div>
-                    <div>
-                        <h2 style="font-size: 18px; font-weight: 700; color: var(--text-primary); margin-bottom: 6px;">Need to check out or return a book?</h2>
-                        <p class="subtitle" style="max-width: 400px; margin: 0 auto; line-height: 1.5;">Click the button below to initialize the camera scanner and hold your book's unique QR code in front of the lens.</p>
-                    </div>
-                    <!-- Large scanner button -->
-                    <button type="button" id="scan-qr-btn" class="submit-btn" style="max-width: 250px; background: linear-gradient(135deg, var(--accent-purple), #8b5cf6);">
-                        <i class="fa-solid fa-camera button-icon"></i>
-                        <span>Scan Book QR Code</span>
-                    </button>
-                </section>
+                <!-- Scanner triggered via Floating Action Button (FAB) in corner -->
 
                 <!-- My Books Section -->
                 <section id="section-my-books" style="margin-top: 10px;">
@@ -171,6 +157,11 @@
             </div>
         </main>
     </div>
+
+    <!-- Floating Action Button (FAB) Scanner (Chatbot Style) -->
+    <button type="button" id="scan-qr-btn" class="fab-scanner-btn" title="Scan QR Code">
+        <i class="fa-solid fa-camera"></i>
+    </button>
 
     <!-- QR Scanner Modal Overlay -->
     <div id="scanner-modal" class="modal-overlay">

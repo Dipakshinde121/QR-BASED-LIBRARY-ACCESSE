@@ -1,0 +1,88 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Library Kiosk - QR Book Pick-Up</title>
+    <!-- Modern Typography: Outfit -->
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Outfit:wght@300;400;500;600;700&display=swap" rel="stylesheet">
+    <!-- FontAwesome for Premium Icons -->
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    <!-- Stylesheet -->
+    <link rel="stylesheet" href="style.css">
+</head>
+<body>
+    <!-- Background visual accents -->
+    <div class="bg-glow bg-glow-1"></div>
+    <div class="bg-glow bg-glow-2"></div>
+
+    <div class="kiosk-container">
+        <!-- Main Card -->
+        <main class="kiosk-card">
+            <!-- Header -->
+            <header class="kiosk-header">
+                <div class="logo-container">
+                    <i class="fa-solid fa-book-bookmark logo-icon"></i>
+                </div>
+                <h1>Library Kiosk</h1>
+                <p class="subtitle">Quick Book Pick-Up Service</p>
+            </header>
+
+            <!-- Interactive Form -->
+            <section class="form-section">
+                <div class="input-group">
+                    <label for="pickup-input" class="input-label">Book Pick-Up Number</label>
+                    <div class="input-wrapper">
+                        <i class="fa-solid fa-hashtag input-icon"></i>
+                        <input 
+                            type="text" 
+                            id="pickup-input" 
+                            placeholder="e.g. BK-9082-XT" 
+                            autocomplete="off" 
+                            required
+                        >
+                    </div>
+                </div>
+
+                <button type="button" id="submit-btn" class="submit-btn">
+                    <span>Generate QR Code</span>
+                    <i class="fa-solid fa-qrcode button-icon"></i>
+                </button>
+            </section>
+
+            <!-- Book Info Display (Dynamic) -->
+            <div id="book-info" class="book-info-card" style="display: none;">
+                <h3 id="book-title">Book Title</h3>
+                <p id="book-author">by Author</p>
+                <div class="info-badge">
+                    <i class="fa-solid fa-location-dot"></i>
+                    <span id="book-location">Location</span>
+                </div>
+            </div>
+
+            <!-- QR Code Placeholder Visualizer -->
+            <section class="qr-section">
+                <div class="qr-card-container">
+                    <!-- Scanner Laser Overlay -->
+                    <div class="scanner-laser" id="scanner-laser"></div>
+                    
+                    <div class="qr-placeholder" id="qr-placeholder">
+                        <div class="qr-inner-content" id="qr-inner-content">
+                            <i class="fa-solid fa-qrcode qr-icon"></i>
+                            <div class="qr-placeholder-text">Awaiting Pick-Up Number</div>
+                            <div class="qr-placeholder-subtext">Enter your number above to initialize the QR code</div>
+                        </div>
+                    </div>
+                </div>
+            </section>
+        </main>
+    </div>
+
+    <!-- Script -->
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/qrious/4.0.2/qrious.min.js"></script>
+    <script src="config.js"></script>
+    <script src="script.js"></script>
+</body>
+</html>

@@ -4,7 +4,7 @@ document.addEventListener('DOMContentLoaded', () => {
     const adminToken = localStorage.getItem('adminToken');
     if (!adminUserStr || !adminToken) {
         alert('Session expired or unauthorized access. Please sign in.');
-        window.location.href = 'admin-login.html';
+        window.location.href = 'index.html';
         return;
     }
 
@@ -45,7 +45,7 @@ document.addEventListener('DOMContentLoaded', () => {
     logoutBtn.addEventListener('click', () => {
         localStorage.removeItem('adminUser');
         localStorage.removeItem('adminToken');
-        window.location.href = 'admin-login.html';
+        window.location.href = 'index.html';
     });
 
     // Handle CSV Export Report Download
@@ -67,7 +67,7 @@ document.addEventListener('DOMContentLoaded', () => {
                 if (response.status === 401) {
                     localStorage.removeItem('adminUser');
                     localStorage.removeItem('adminToken');
-                    window.location.href = 'admin-login.html';
+                    window.location.href = 'index.html';
                     throw new Error('Unauthorized session. Please sign in again.');
                 }
                 if (!response.ok) {
@@ -194,7 +194,7 @@ document.addEventListener('DOMContentLoaded', () => {
             if (response.status === 401) {
                 localStorage.removeItem('adminUser');
                 localStorage.removeItem('adminToken');
-                window.location.href = 'admin-login.html';
+                window.location.href = 'index.html';
                 throw new Error('Unauthorized');
             }
             if (!response.ok) {
@@ -286,7 +286,7 @@ document.addEventListener('DOMContentLoaded', () => {
             if (response.status === 401) {
                 localStorage.removeItem('adminUser');
                 localStorage.removeItem('adminToken');
-                window.location.href = 'admin-login.html';
+                window.location.href = 'index.html';
                 throw new Error('Unauthorized');
             }
             if (!response.ok) {
@@ -427,7 +427,7 @@ document.addEventListener('DOMContentLoaded', () => {
                 alert('Session expired. Please sign in again.');
                 localStorage.removeItem('adminUser');
                 localStorage.removeItem('adminToken');
-                window.location.href = 'admin-login.html';
+                window.location.href = 'index.html';
                 throw new Error('Unauthorized');
             }
             if (!response.ok) {
@@ -509,7 +509,7 @@ document.addEventListener('DOMContentLoaded', () => {
             if (response.status === 401) {
                 localStorage.removeItem('adminUser');
                 localStorage.removeItem('adminToken');
-                window.location.href = 'admin-login.html';
+                window.location.href = 'index.html';
                 throw new Error('Unauthorized');
             }
             if (!response.ok) {
@@ -664,7 +664,7 @@ document.addEventListener('DOMContentLoaded', () => {
             if (response.status === 401) {
                 localStorage.removeItem('adminUser');
                 localStorage.removeItem('adminToken');
-                window.location.href = 'admin-login.html';
+                window.location.href = 'index.html';
                 throw new Error('Unauthorized');
             }
             if (!response.ok) {

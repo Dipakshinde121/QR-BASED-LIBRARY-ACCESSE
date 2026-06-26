@@ -4,7 +4,7 @@ document.addEventListener('DOMContentLoaded', () => {
     const studentToken = localStorage.getItem('studentToken');
     if (!studentUserStr || !studentToken) {
         alert('Session expired or unauthorized access. Please sign in.');
-        window.location.href = 'student-login.html';
+        window.location.href = 'index.html';
         return;
     }
 
@@ -29,7 +29,7 @@ document.addEventListener('DOMContentLoaded', () => {
     logoutBtn.addEventListener('click', () => {
         localStorage.removeItem('studentUser');
         localStorage.removeItem('studentToken');
-        window.location.href = 'student-login.html';
+        window.location.href = 'index.html';
     });
 
     // Modal & Scanner Elements
@@ -197,7 +197,7 @@ document.addEventListener('DOMContentLoaded', () => {
                 alert('Session expired. Please sign in again.');
                 localStorage.removeItem('studentUser');
                 localStorage.removeItem('studentToken');
-                window.location.href = 'student-login.html';
+                window.location.href = 'index.html';
                 throw new Error('Unauthorized');
             }
             if (!response.ok) {
@@ -253,7 +253,7 @@ document.addEventListener('DOMContentLoaded', () => {
             if (response.status === 401) {
                 localStorage.removeItem('studentUser');
                 localStorage.removeItem('studentToken');
-                window.location.href = 'student-login.html';
+                window.location.href = 'index.html';
                 throw new Error('Unauthorized');
             }
             if (!response.ok) {
@@ -354,7 +354,7 @@ document.addEventListener('DOMContentLoaded', () => {
             if (response.status === 401) {
                 localStorage.removeItem('studentUser');
                 localStorage.removeItem('studentToken');
-                window.location.href = 'student-login.html';
+                window.location.href = 'index.html';
                 throw new Error('Unauthorized');
             }
             if (!response.ok) {

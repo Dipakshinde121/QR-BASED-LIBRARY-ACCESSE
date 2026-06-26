@@ -232,3 +232,58 @@
     flex: 1;
     line-height: 1.4;
 }
+
+/* Floating Action Button (FAB) Scanner */
+.fab-scanner-btn {
+    position: fixed;
+    bottom: 24px;
+    right: 24px;
+    width: 60px;
+    height: 60px;
+    border-radius: 50%;
+    background: linear-gradient(135deg, var(--accent-purple), #8b5cf6);
+    border: none;
+    color: #ffffff;
+    font-size: 22px;
+    cursor: pointer;
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    box-shadow: 0 4px 20px rgba(139, 92, 246, 0.4);
+    z-index: 999;
+    transition: var(--transition-smooth);
+    position: fixed;
+}
+
+.fab-scanner-btn:hover {
+    transform: scale(1.08) rotate(5deg);
+    background: linear-gradient(135deg, #8b5cf6, var(--accent-cyan));
+    box-shadow: 0 6px 24px rgba(6, 182, 212, 0.5);
+}
+
+.fab-scanner-btn:active {
+    transform: scale(0.95);
+}
+
+.fab-scanner-btn::after {
+    content: '';
+    position: absolute;
+    inset: -3px;
+    border-radius: 50%;
+    background: inherit;
+    z-index: -1;
+    opacity: 0.4;
+    animation: fabPulse 2.5s infinite;
+}
+
+@keyframes fabPulse {
+    0% {
+        transform: scale(1);
+        opacity: 0.4;
+    }
+    100% {
+        transform: scale(1.35);
+        opacity: 0;
+    }
+}
+
