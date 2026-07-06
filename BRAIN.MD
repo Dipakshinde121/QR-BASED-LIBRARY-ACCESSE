@@ -1,6 +1,6 @@
 # Project Brain & Architecture Document (`BRAIN.MD`)
 
-This document serves as the centralized source of truth for the **QR-Based Library Access & Management System**. It contains the directory layout, schema structure, data flows, implementation log, and current project state to facilitate rapid, context-rich maintenance and development.
+This document serves as the centralized source of truth for the **QR-Based Library Access & Management System**. It contains the directory layout and  schema structure, data flows, implementation log, and current project state to facilitate rapid, context-rich maintenance and development.
 
 ---
 
